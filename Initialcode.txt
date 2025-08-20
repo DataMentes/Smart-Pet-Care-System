@@ -1,0 +1,158 @@
+#include <ESP32Servo.h>
+#include <LiquidCrystal_I2C.h>
+// #include <HX711.h>   // Temporarily disabled until HX711 is used
+
+// Pins
+#define SERVO_PIN     4
+#define IR_PIN        16
+// #define HX711_DT     32   // HX711 Data pin (commented out for now)
+// #define HX711_SCK    33   // HX711 Clock pin (commented out for now)
+#define WATER_SENSOR 35
+#define LED          26
+
+// LCD
+#define LCD_ADDRESS 0x27
+#define LCD_COLUMNS 16
+#define LCD_ROWS    2
+
+LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
+Servo servo;
+// HX711 scale;   // Temporarily disabled
+
+// --- Track last displayed content ---
+String last_line1 = "";
+String last_line2 = "";
+
+// --- Custom characters (Up & Down arrows) ---
+byte arrowUp[8] = {
+  0b00100,
+  0b01110,
+  0b10101,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00000
+};
+
+byte arrowDown[8] = {
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b10101,
+  0b01110,
+  0b00100,
+  0b00000
+};
+void motor(String state);
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(LED, OUTPUT);
+  pinMode(IR_PIN, INPUT);
+  pinMode(WATER_SENSOR, INPUT);
+
+  // Servo setup
+  servo.attach(SERVO_PIN);
+  servo.setPeriodHertz(50);
+
+  // LCD setup
+  lcd.init();
+  lcd.backlight();
+
+  // Load custom characters into LCD memory
+  lcd.createChar(0, arrowUp);
+  lcd.createChar(1, arrowDown);
+
+  // HX711 setup (commented out until used)
+  // scale.begin(HX711_DT, HX711_SCK);
+  // scale.set_scale(0.1);   // Adjust based on calibration
+  // scale.tare();           // Reset weight to zero
+}
+int x = 1;
+void loop() {
+  // --- Wait until Serial Monitor is opened ---
+  if (!Serial) {
+    return;   // Skip loop if Serial is not ready
+  }
+
+
+
+
+  digitalWrite(LED, HIGH);
+
+  // --- Read sensors ---
+  int water_read = analogRead(WATER_SENSOR);
+  int ir_read    = !digitalRead(IR_PIN);
+  int food_weight = 25;   // Temporary fixed value (will replace with HX711 later)
+
+  // --- Build LCD strings with arrows ---
+  String tank_state  = "Tank: ";
+  tank_state += (ir_read ? char(0) : char(1));   // ↑ for High, ↓ for Low
+
+  String water_state = "Water: ";
+  water_state += (water_read > 1000 ? char(0) : char(1)); // ↑ / ↓
+
+  String food_state  = "Food: " + String(food_weight) + "g";
+
+  // Serial debug
+  Serial.println(tank_state);
+  Serial.println(water_state);
+  Serial.println(food_state);
+
+  // --- Format LCD lines ---
+  String line1 = tank_state + " " + water_state; // Tank + Water
+  String line2 = food_state;                   // Food 
+
+  // --- Update LCD only if changed ---
+  if (line1 != last_line1) {
+    lcd.setCursor(0, 0);
+    lcd.print("                "); // clear line
+    lcd.setCursor(0, 0);
+    lcd.print(line1);
+    last_line1 = line1;
+  }
+
+  if (line2 != last_line2) {
+    lcd.setCursor(0, 1);
+    lcd.print("                "); // clear line
+    lcd.setCursor(0, 1);
+    lcd.print(line2);
+    last_line2 = line2;
+  }
+
+
+    // Servo test movement
+  if (x){
+  motor("open");
+  delay(1000);  
+  motor("close");
+  x = 0;
+  lcd.init();
+  lcd.backlight();
+    // Load custom characters into LCD memory
+  lcd.createChar(0, arrowUp);
+  lcd.createChar(1, arrowDown);
+  last_line1 = "";  // force refresh
+  last_line2 = "";
+  }
+
+  delay(1000);
+}
+
+void motor(String state){
+  if (state == "open"){
+    servo.write(45);
+    delay(500);
+    servo.write(90);
+  } else if (state == "close"){
+    servo.write(135);
+    delay(500);
+    servo.write(90);
+  } else {
+  Serial.println("ًWrong Option");
+  }
+}
+
