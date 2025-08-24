@@ -1,0 +1,2 @@
+email : smartpetcaresystem@gmail.com
+password : smart_care_pet_system_000
