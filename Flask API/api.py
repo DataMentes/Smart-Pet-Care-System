@@ -169,9 +169,13 @@ def signup_verify():
             "email": email,
             "first_name": data.get("first_name"),
             "last_name": data.get("last_name"),
+        }
+        fcm_token_data = {
+            "email": email,
             "fcm_token": fcm_token
         }
         supabase_admin.table("Users").insert(profile_data).execute()
+        supabase_admin.table("fcm_token").insert(fcm_token_data).execute()
         supabase_admin.table("otp_codes").delete().eq("email", email).execute()
         return jsonify(auth_response.session.dict()), 201
     except Exception as e:
