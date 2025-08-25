@@ -31,6 +31,7 @@ CORS(app)
 
 # --- Helper Functions ---
 
+
 def publish_to_mqtt(topic, payload):
     try:
         client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -58,9 +59,9 @@ def publish_to_mqtt(topic, payload):
 
 def send_otp_email(recipient_email, otp_code):
     message = Mail(
-        from_email=os.getenv('VERIFIED_SENDER_EMAIL'),
+        from_email=os.getenv("VERIFIED_SENDER_EMAIL"),
         to_emails=recipient_email,
-        subject='Your Pet Feeder Verification Code',
+        subject="Your Pet Feeder Verification Code",
         html_content=f"""
             <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
                 <h2>Welcome to Pet Feeder!</h2>
@@ -70,10 +71,10 @@ def send_otp_email(recipient_email, otp_code):
                 </p>
                 <p>This code will expire in 10 minutes.</p>
             </div>
-        """
+        """,
     )
     try:
-        sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
         response = sg.send(message)
         print(f"Email sent to {recipient_email}, Status Code: {response.status_code}")
         return True
@@ -84,6 +85,7 @@ def send_otp_email(recipient_email, otp_code):
 
 # --- Public & Status Routes ---
 
+
 @app.route("/")
 def welcome():
     return "Welcome to the Pet Feeder API"
@@ -93,7 +95,7 @@ def welcome():
 def api_status():
     db_status = {
         "status": "unhealthy",
-        "details": "Connection could not be established."
+        "details": "Connection could not be established.",
     }
 
     try:
@@ -109,7 +111,7 @@ def api_status():
     status_data = {
         "api_status": "online",
         "timestamp": datetime.now().isoformat(),
-        "database_connection": db_status
+        "database_connection": db_status,
     }
 
     if db_status["status"] == "unhealthy":
@@ -120,6 +122,7 @@ def api_status():
 
 # --- Authentication Routes ---
 
+
 @app.route("/auth/signup/request-otp", methods=["POST"])
 def signup_request_otp():
     try:
@@ -127,17 +130,17 @@ def signup_request_otp():
         email = data.get("email")
         if not email:
             return jsonify({"error": "Email is required"}), 400
-        user_check = supabase_admin.table("Users").select("email").eq("email", email).execute()
+        user_check = (
+            supabase_admin.table("Users").select("email").eq("email", email).execute()
+        )
         if user_check.data:
             return jsonify({"error": "Email already exists"}), 409
         otp_code = str(random.randint(100000, 999999))
         hashed_otp = generate_password_hash(otp_code)
         expires_at = (datetime.now() + timedelta(minutes=10)).isoformat()
-        supabase_admin.table("otp_codes").upsert({
-            "email": email,
-            "code": hashed_otp,
-            "expires_at": expires_at
-        }).execute()
+        supabase_admin.table("otp_codes").upsert(
+            {"email": email, "code": hashed_otp, "expires_at": expires_at}
+        ).execute()
         send_otp_email(email, otp_code)
         return jsonify({"message": "A verification code has been sent to your email."})
     except Exception as e:
@@ -148,32 +151,47 @@ def signup_request_otp():
 def signup_verify():
     try:
         data = request.get_json()
-        required_fields = ["email", "password", "first_name", "last_name", "otp", "fcm_token"]
+        print(data)
+        required_fields = [
+            "email",
+            "password",
+            "first_name",
+            "last_name",
+            "otp",
+            "fcm_token",
+        ]
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
         email = data["email"]
         otp_from_user = data["otp"]
         password = data["password"]
         fcm_token = data.get("fcm_token")
-        otp_record_res = supabase_admin.table("otp_codes").select("*").eq("email", email).single().execute()
+        otp_record_res = (
+            supabase_admin.table("otp_codes")
+            .select("*")
+            .eq("email", email)
+            .single()
+            .execute()
+        )
         otp_record = otp_record_res.data
         if not otp_record:
             return jsonify({"error": "Invalid email or no OTP request found"}), 400
         utc_now = datetime.now(datetime.now().astimezone().tzinfo)
         is_expired = datetime.fromisoformat(otp_record["expires_at"]) < utc_now
         is_correct = check_password_hash(otp_record["code"], otp_from_user)
-        if is_expired: return jsonify({"error": "OTP has expired"}), 401
-        if not is_correct: return jsonify({"error": "Invalid OTP"}), 401
-        auth_response = supabase_user.auth.sign_up({"email": email, "password": password})
+        if is_expired:
+            return jsonify({"error": "OTP has expired"}), 401
+        if not is_correct:
+            return jsonify({"error": "Invalid OTP"}), 401
+        auth_response = supabase_user.auth.sign_up(
+            {"email": email, "password": password}
+        )
         profile_data = {
             "email": email,
             "first_name": data.get("first_name"),
             "last_name": data.get("last_name"),
         }
-        fcm_token_data = {
-            "email": email,
-            "fcm_token": fcm_token
-        }
+        fcm_token_data = {"email": email, "fcm_token": fcm_token}
         supabase_admin.table("Users").insert(profile_data).execute()
         supabase_admin.table("fcm_tokens").insert(fcm_token_data).execute()
         supabase_admin.table("otp_codes").delete().eq("email", email).execute()
@@ -186,18 +204,23 @@ def signup_verify():
 def login():
     try:
         data = request.get_json()
-        if not data or "email" not in data or "password" not in data or "fcm_token" not in data:
-            return jsonify({"error": "Email, password, and fcm_token are required"}), 400
+        if (
+            not data
+            or "email" not in data
+            or "password" not in data
+            or "fcm_token" not in data
+        ):
+            return (
+                jsonify({"error": "Email, password, and fcm_token are required"}),
+                400,
+            )
         email = data["email"]
         password = data["password"]
         fcm_token = data["fcm_token"]
-        auth_response = supabase_user.auth.sign_in_with_password({
-            "email": email,
-            "password": password
-        })
-        supabase_admin.table("fcm_tokens").update({
-            "fcm_token": fcm_token
-        }).eq(
+        auth_response = supabase_user.auth.sign_in_with_password(
+            {"email": email, "password": password}
+        )
+        supabase_admin.table("fcm_tokens").update({"fcm_token": fcm_token}).eq(
             "email", email
         ).execute()
         return jsonify(auth_response.session.dict()), 200
@@ -211,20 +234,36 @@ def password_reset_request():
     try:
         data = request.get_json()
         email = data.get("email")
-        if not email: return jsonify({"error": "Email is required"}), 400
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
 
-        user_check = supabase_admin.table("Users").select("*").eq("email", email).single().execute()
+        user_check = (
+            supabase_admin.table("Users")
+            .select("*")
+            .eq("email", email)
+            .single()
+            .execute()
+        )
         if not user_check.data:
-            return jsonify({"message": "If an account with this email exists, a reset code has been sent."})
+            return jsonify(
+                {
+                    "message": "If an account with this email exists, a reset code has been sent."
+                }
+            )
 
         otp_code = str(random.randint(100000, 999999))
         hashed_otp = generate_password_hash(otp_code)
         expires_at = (datetime.now() + timedelta(minutes=10)).isoformat()
 
         supabase_admin.table("otp_codes").upsert(
-            {"email": email, "code": hashed_otp, "expires_at": expires_at}).execute()
+            {"email": email, "code": hashed_otp, "expires_at": expires_at}
+        ).execute()
         send_otp_email(email, otp_code)
-        return jsonify({"message": "If an account with this email exists, a reset code has been sent."})
+        return jsonify(
+            {
+                "message": "If an account with this email exists, a reset code has been sent."
+            }
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -235,19 +274,33 @@ def password_reset_verify():
         data = request.get_json()
         email = data.get("email")
         otp_from_user = data.get("otp")
-        if not email or not otp_from_user: return jsonify({"error": "Email and OTP are required"}), 400
+        if not email or not otp_from_user:
+            return jsonify({"error": "Email and OTP are required"}), 400
 
-        otp_record_res = supabase_admin.table("otp_codes").select("*").eq("email", email).single().execute()
-        if not otp_record_res.data: return jsonify({"error": "Invalid OTP or request not found"}), 401
+        otp_record_res = (
+            supabase_admin.table("otp_codes")
+            .select("*")
+            .eq("email", email)
+            .single()
+            .execute()
+        )
+        if not otp_record_res.data:
+            return jsonify({"error": "Invalid OTP or request not found"}), 401
 
         otp_record = otp_record_res.data
         utc_now = datetime.now(datetime.now().astimezone().tzinfo)
         is_expired = datetime.fromisoformat(otp_record["expires_at"]) < utc_now
         is_correct = check_password_hash(otp_record["code"], otp_from_user)
 
-        if is_expired or not is_correct: return jsonify({"error": "Invalid or expired OTP"}), 401
+        if is_expired or not is_correct:
+            return jsonify({"error": "Invalid or expired OTP"}), 401
 
-        return jsonify({"status": "success", "message": "OTP verified successfully. You can now set a new password."})
+        return jsonify(
+            {
+                "status": "success",
+                "message": "OTP verified successfully. You can now set a new password.",
+            }
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -264,14 +317,22 @@ def password_reset_confirm():
         otp_from_user = data["otp"]
         new_password = data["new_password"]
 
-        otp_record_res = supabase_admin.table("otp_codes").select("*").eq("email", email).single().execute()
+        otp_record_res = (
+            supabase_admin.table("otp_codes")
+            .select("*")
+            .eq("email", email)
+            .single()
+            .execute()
+        )
         if not otp_record_res.data:
             return jsonify({"error": "Invalid request. Please start over."}), 401
 
         otp_record = otp_record_res.data
 
         utc_now = datetime.now(timezone.utc)
-        expires_at_dt = datetime.fromisoformat(otp_record["expires_at"].replace('Z', '+00:00'))
+        expires_at_dt = datetime.fromisoformat(
+            otp_record["expires_at"].replace("Z", "+00:00")
+        )
 
         is_expired = expires_at_dt < utc_now
         is_correct = check_password_hash(otp_record["code"], otp_from_user)
@@ -288,14 +349,13 @@ def password_reset_confirm():
         user_to_update = users_list_response.users[0]
         user_id = user_to_update.id
 
-        supabase_admin.auth.admin.update_user_by_id(
-            user_id,
-            {"password": new_password}
-        )
+        supabase_admin.auth.admin.update_user_by_id(user_id, {"password": new_password})
 
         supabase_admin.table("otp_codes").delete().eq("email", email).execute()
 
-        return jsonify({"message": "Password has been updated successfully. Please log in."})
+        return jsonify(
+            {"message": "Password has been updated successfully. Please log in."}
+        )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -303,14 +363,20 @@ def password_reset_confirm():
 
 # --- API Routes (Require Authentication) ---
 
+
 @app.route("/api/devices", methods=["GET"])
 def get_user_devices():
     try:
         jwt = request.headers.get("Authorization").split(" ")[1]
         user = supabase_user.auth.get_user(jwt).user
-        if not user: return jsonify({"error": "Invalid token"}), 401
-        devices_response = supabase_admin.table("authenticated_devices").select("device_id").eq("email",
-                                                                                                user.email).execute()
+        if not user:
+            return jsonify({"error": "Invalid token"}), 401
+        devices_response = (
+            supabase_admin.table("authenticated_devices")
+            .select("device_id")
+            .eq("email", user.email)
+            .execute()
+        )
         return jsonify(devices_response.data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -321,18 +387,39 @@ def register_new_device():
     try:
         jwt = request.headers.get("Authorization").split(" ")[1]
         user = supabase_user.auth.get_user(jwt).user
-        if not user: return jsonify({"error": "Invalid token"}), 401
+        if not user:
+            return jsonify({"error": "Invalid token"}), 401
         data = request.get_json()
         device_id = data.get("device_id")
-        if not device_id: return jsonify({"error": "device_id is required"}), 400
-        device_check = supabase_admin.table("Devices").select("device_id").eq("device_id", device_id).execute()
-        if not device_check.data: return jsonify({"error": "Device ID not valid"}), 404
-        auth_device_check = supabase_admin.table("authenticated_devices").select("device_id").eq("device_id",
-                                                                                                 device_id).execute()
-        if auth_device_check.data: return jsonify({"error": "Device already registered"}), 409
+        if not device_id:
+            return jsonify({"error": "device_id is required"}), 400
+        device_check = (
+            supabase_admin.table("Devices")
+            .select("device_id")
+            .eq("device_id", device_id)
+            .execute()
+        )
+        if not device_check.data:
+            return jsonify({"error": "Device ID not valid"}), 404
+        auth_device_check = (
+            supabase_admin.table("authenticated_devices")
+            .select("device_id")
+            .eq("device_id", device_id)
+            .execute()
+        )
+        if auth_device_check.data:
+            return jsonify({"error": "Device already registered"}), 409
         link_data = {"device_id": device_id, "email": user.email}
         supabase_admin.table("authenticated_devices").insert(link_data).execute()
-        return jsonify({"status": "success", "message": f"Device {device_id} registered successfully."}), 201
+        return (
+            jsonify(
+                {
+                    "status": "success",
+                    "message": f"Device {device_id} registered successfully.",
+                }
+            ),
+            201,
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -342,16 +429,28 @@ def get_all_statuses():
     try:
         jwt = request.headers.get("Authorization").split(" ")[1]
         user = supabase_user.auth.get_user(jwt).user
-        if not user: return jsonify({"error": "Invalid token"}), 401
-        devices_list_res = supabase_admin.table("authenticated_devices").select("device_id").eq("email",
-                                                                                                user.email).execute()
+        if not user:
+            return jsonify({"error": "Invalid token"}), 401
+        devices_list_res = (
+            supabase_admin.table("authenticated_devices")
+            .select("device_id")
+            .eq("email", user.email)
+            .execute()
+        )
         if not devices_list_res.data:
             return jsonify([])
-        device_ids = [d['device_id'] for d in devices_list_res.data]
+        device_ids = [d["device_id"] for d in devices_list_res.data]
         all_statuses = []
         for device_id in device_ids:
-            status_res = supabase_admin.table("Sensors_device").select("*").eq("device_id", device_id).order(
-                "timestamp", desc=True).limit(1).single().execute()
+            status_res = (
+                supabase_admin.table("Sensors_device")
+                .select("*")
+                .eq("device_id", device_id)
+                .order("timestamp", desc=True)
+                .limit(1)
+                .single()
+                .execute()
+            )
             if status_res.data:
                 all_statuses.append(status_res.data)
         return jsonify(all_statuses)
@@ -367,9 +466,13 @@ def get_device_full_report(device_id):
         if not user:
             return jsonify({"error": "Invalid token"}), 401
 
-        ownership_check = supabase_admin.table("authenticated_devices").select("device_id").eq("device_id",
-                                                                                               device_id).eq("email",
-                                                                                                             user.email).execute()
+        ownership_check = (
+            supabase_admin.table("authenticated_devices")
+            .select("device_id")
+            .eq("device_id", device_id)
+            .eq("email", user.email)
+            .execute()
+        )
         if not ownership_check.data:
             return jsonify({"error": "Forbidden"}), 403
 
@@ -378,32 +481,40 @@ def get_device_full_report(device_id):
 
         start_date = datetime.now() - timedelta(days=days_range)
 
-        history_res = supabase_admin.table("Sensors_device").select(
-            "timestamp, food_weighted"
-        ).eq(
-            "device_id", device_id
-        ).gte(
-            "timestamp", start_date.isoformat()
-        ).order(
-            "timestamp"
-        ).execute()
+        history_res = (
+            supabase_admin.table("Sensors_device")
+            .select("timestamp, food_weighted")
+            .eq("device_id", device_id)
+            .gte("timestamp", start_date.isoformat())
+            .order("timestamp")
+            .execute()
+        )
 
         if not history_res.data:
             return jsonify({"error": "No data found for this period"}), 404
 
-        food_data = [d['food_weighted'] for d in history_res.data if d.get('food_weighted') is not None]
+        food_data = [
+            d["food_weighted"]
+            for d in history_res.data
+            if d.get("food_weighted") is not None
+        ]
         total_consumed = sum(food_data)
         days_with_data = len(
-            set(d['timestamp'].split('T')[0] for d in history_res.data if d.get('food_weighted') is not None))
+            set(
+                d["timestamp"].split("T")[0]
+                for d in history_res.data
+                if d.get("food_weighted") is not None
+            )
+        )
         average_daily = total_consumed / days_with_data if days_with_data > 0 else 0
 
         full_report = {
             "analytics": {
                 "period": period,
                 "total_consumed_grams": total_consumed,
-                "average_daily_consumption_grams": round(average_daily, 2)
+                "average_daily_consumption_grams": round(average_daily, 2),
             },
-            "chart_data": history_res.data
+            "chart_data": history_res.data,
         }
 
         return jsonify(full_report)
@@ -417,18 +528,26 @@ def get_device_schedule(device_id):
     try:
         jwt = request.headers.get("Authorization").split(" ")[1]
         user = supabase_user.auth.get_user(jwt).user
-        if not user: return jsonify({"error": "Invalid token"}), 401
+        if not user:
+            return jsonify({"error": "Invalid token"}), 401
 
-        ownership_check = supabase_admin.table("authenticated_devices").select("device_id").eq("device_id",
-                                                                                               device_id).eq("email",
-                                                                                                             user.email).execute()
-        if not ownership_check.data: return jsonify({"error": "Forbidden"}), 403
+        ownership_check = (
+            supabase_admin.table("authenticated_devices")
+            .select("device_id")
+            .eq("device_id", device_id)
+            .eq("email", user.email)
+            .execute()
+        )
+        if not ownership_check.data:
+            return jsonify({"error": "Forbidden"}), 403
 
-        schedule_data = supabase_admin.table("schedules").select(
-            "feed_time, amount_grams"
-        ).eq(
-            "device_id", device_id
-        ).execute().data
+        schedule_data = (
+            supabase_admin.table("schedules")
+            .select("feed_time, amount_grams")
+            .eq("device_id", device_id)
+            .execute()
+            .data
+        )
 
         return jsonify({"schedule": schedule_data})
     except Exception as e:
@@ -440,29 +559,42 @@ def update_device_schedule(device_id):
     try:
         jwt = request.headers.get("Authorization").split(" ")[1]
         user = supabase_user.auth.get_user(jwt).user
-        if not user: return jsonify({"error": "Invalid or expired token"}), 401
+        if not user:
+            return jsonify({"error": "Invalid or expired token"}), 401
 
-        ownership_check = supabase_admin.table("authenticated_devices").select("device_id").eq("device_id",
-                                                                                               device_id).eq("email",
-                                                                                                             user.email).execute()
-        if not ownership_check.data: return jsonify({"error": "Forbidden: You do not own this device"}), 403
+        ownership_check = (
+            supabase_admin.table("authenticated_devices")
+            .select("device_id")
+            .eq("device_id", device_id)
+            .eq("email", user.email)
+            .execute()
+        )
+        if not ownership_check.data:
+            return jsonify({"error": "Forbidden: You do not own this device"}), 403
 
         data = request.get_json()
         new_schedule = data.get("schedule")
-        if not isinstance(new_schedule, list): return jsonify(
-            {"error": "Request body must contain a 'schedule' list"}), 400
+        if not isinstance(new_schedule, list):
+            return (
+                jsonify({"error": "Request body must contain a 'schedule' list"}),
+                400,
+            )
 
-        supabase_admin.table("schedules").delete().eq("device_id", device_id).eq("email", user.email).execute()
+        supabase_admin.table("schedules").delete().eq("device_id", device_id).eq(
+            "email", user.email
+        ).execute()
 
         schedule_to_insert = []
         if new_schedule:
             for item in new_schedule:
-                schedule_to_insert.append({
-                    "device_id": device_id,
-                    "email": user.email,
-                    "feed_time": item.get("time"),
-                    "amount_grams": item.get("amount")
-                })
+                schedule_to_insert.append(
+                    {
+                        "device_id": device_id,
+                        "email": user.email,
+                        "feed_time": item.get("time"),
+                        "amount_grams": item.get("amount"),
+                    }
+                )
 
         if schedule_to_insert:
             supabase_admin.table("schedules").insert(schedule_to_insert).execute()
@@ -471,7 +603,12 @@ def update_device_schedule(device_id):
         payload = json.dumps({"schedule": new_schedule})
         publish_to_mqtt(topic, payload)
 
-        return jsonify({"status": "success", "message": f"Schedule for device {device_id} has been updated and sent."})
+        return jsonify(
+            {
+                "status": "success",
+                "message": f"Schedule for device {device_id} has been updated and sent.",
+            }
+        )
 
     except Exception as e:
         return jsonify({"error": "An error occurred", "details": str(e)}), 500
