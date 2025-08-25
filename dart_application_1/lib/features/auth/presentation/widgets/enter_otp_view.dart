@@ -6,10 +6,12 @@ import '../../../../core/widgets/custom_button.dart';
 class EnterOtpView extends StatelessWidget {
   final String email;
   final VoidCallback onVerifyPressed;
+  final TextEditingController otpController; // ✅  التصحيح
 
   const EnterOtpView({
     super.key,
     required this.email,
+    required this.otpController,
     required this.onVerifyPressed,
   });
 
@@ -53,6 +55,7 @@ class EnterOtpView extends StatelessWidget {
               border: Border.all(color: Theme.of(context).primaryColor),
             ),
           ),
+          controller: otpController, // ✅  التصحيح
         ),
         const SizedBox(height: 40),
         CustomButton(text: 'Verify', onPressed: onVerifyPressed),

@@ -1,11 +1,12 @@
 // lib/features/home/presentation/screens/home_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../../core/api_service.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../domain/models/pet_device.dart';
 import '../widgets/device_card.dart';
 
-// ✅  التصحيح: تحويلها إلى StatefulWidget
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -14,32 +15,21 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // ✅  التصحيح: نقل قائمة الأجهزة إلى هنا لتكون جزءاً من الـ State
-  final List<PetDevice> _devices = [
-    PetDevice(
-      id: 'SN-112233',
-      name: 'Device 1',
-      foodWeightGrams: 120,
-      isFoodStockHigh: true,
-      isWaterTankFull: true,
-    ),
-    PetDevice(
-      id: 'SN-445566',
-      name: 'Device 2',
-      foodWeightGrams: 80,
-      isFoodStockHigh: false,
-      isWaterTankFull: false,
-    ),
-    PetDevice(
-      id: 'SN-778899',
-      name: 'Device 3',
-      foodWeightGrams: 100,
-      isFoodStockHigh: true,
-      isWaterTankFull: true,
-    ),
-  ];
+  final ApiService _apiService = ApiService();
+  late Future<List<PetDevice>> _devicesFuture;
 
-  // ✅  التصحيح: دالة جديدة لإظهار مربع حوار الإضافة
+  @override
+  void initState() {
+    super.initState();
+    _devicesFuture = _apiService.getAllDeviceStatuses();
+  }
+
+  void _refreshDevices() {
+    setState(() {
+      _devicesFuture = _apiService.getAllDeviceStatuses();
+    });
+  }
+
   void _showAddDeviceDialog() {
     final nameController = TextEditingController();
     final idController = TextEditingController();
@@ -53,7 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Device Name'),
+              decoration: const InputDecoration(
+                labelText: 'Device Name (Optional)',
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -64,29 +56,33 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           TextButton(
-            child: const Text('Cancel'),
             onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             child: const Text('Add'),
-            onPressed: () {
-              final name = nameController.text;
+            onPressed: () async {
               final id = idController.text;
-              if (name.isNotEmpty && id.isNotEmpty) {
-                // إضافة الجهاز الجديد إلى القائمة
-                setState(() {
-                  _devices.add(
-                    PetDevice(
-                      id: id,
-                      name: name,
-                      // قيم افتراضية للجهاز الجديد
-                      foodWeightGrams: 0,
-                      isFoodStockHigh: true,
-                      isWaterTankFull: true,
-                    ),
-                  );
-                });
-                Navigator.of(ctx).pop();
+              if (id.isNotEmpty) {
+                try {
+                  final response = await _apiService.addDevice(id);
+                  Navigator.of(ctx).pop();
+
+                  if (response.statusCode == 201 && mounted) {
+                    _refreshDevices();
+                  } else if (mounted) {
+                    final error = jsonDecode(response.body)['message'];
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $error')));
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to add device: $e')),
+                    );
+                  }
+                }
               }
             },
           ),
@@ -126,35 +122,63 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SafeArea(
         top: false,
-        child: ListView(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
-          children: [
-            Text(
-              "How is your pet today?",
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-
-            // استخدام القائمة من الـ State
-            ..._devices.map((device) => DeviceCard(device: device)).toList(),
-
-            SizedBox(
-              height: 50,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('Add New Device'),
-                // ✅  التصحيح: تفعيل الزر لاستدعاء الدالة
-                onPressed: _showAddDeviceDialog,
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "How is your pet today?",
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: FutureBuilder<List<PetDevice>>(
+                  future: _devicesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text('No devices found. Add one!'),
+                      );
+                    }
+                    final devices = snapshot.data!;
+                    return RefreshIndicator(
+                      onRefresh: () async => _refreshDevices(),
+                      child: ListView(
+                        children: [
+                          ...devices
+                              .map((device) => DeviceCard(device: device))
+                              .toList(),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 50,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add New Device'),
+                  onPressed: _showAddDeviceDialog,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

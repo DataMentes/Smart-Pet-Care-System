@@ -6,6 +6,14 @@ class ChartDataPoint {
   final double x;
   final double y;
   ChartDataPoint({required this.x, required this.y});
+
+  // ✅  التصحيح: إضافة هذا الـ factory constructor
+  factory ChartDataPoint.fromJson(Map<String, dynamic> json) {
+    return ChartDataPoint(
+      x: (json['x'] ?? 0.0).toDouble(),
+      y: (json['y'] ?? 0.0).toDouble(),
+    );
+  }
 }
 
 class ConsumptionChart extends StatelessWidget {

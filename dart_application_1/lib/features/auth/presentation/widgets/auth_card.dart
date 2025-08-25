@@ -34,11 +34,7 @@ class AuthCard extends StatelessWidget {
           const SizedBox(height: 20),
           TabBar(tabs: tabs),
           const SizedBox(height: 20),
-          SizedBox(
-            // ✅  التصحيح: تم زيادة الارتفاع بشكل كبير لاستيعاب الحقول الجديدة
-            height: 620,
-            child: TabBarView(children: tabViews),
-          ),
+          SizedBox(height: 620, child: TabBarView(children: tabViews)),
         ],
       ),
     );

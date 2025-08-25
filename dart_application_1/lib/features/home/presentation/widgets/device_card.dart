@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import '../../domain/models/pet_device.dart';
 import '../../../device_control/presentation/screens/device_control_screen.dart';
 import '../../../history/presentation/screens/history_screen.dart';
-import 'status_indicator.dart';
 
 class DeviceCard extends StatelessWidget {
-  // ✅  التصحيح: هذا السطر والـ constructor كانا ناقصين
   final PetDevice device;
   const DeviceCard({super.key, required this.device});
 
@@ -28,30 +26,6 @@ class DeviceCard extends StatelessWidget {
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(
-                  Icons.restaurant,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Food in Bowl:',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                Text(
-                  '${device.foodWeightGrams.toStringAsFixed(0)} g',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
             const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -60,14 +34,14 @@ class DeviceCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    StatusIndicator(
-                      label: 'Food Stock',
-                      isFull: device.isFoodStockHigh,
+                    Text(
+                      'Food Level: ${device.foodLevel.toStringAsFixed(1)}%',
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 8),
-                    StatusIndicator(
-                      label: 'Water Tank',
-                      isFull: device.isWaterTankFull,
+                    Text(
+                      'Water Level: ${device.waterLevel.toStringAsFixed(1)}%',
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
                 ),
@@ -77,8 +51,10 @@ class DeviceCard extends StatelessWidget {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) =>
-                                HistoryScreen(deviceName: device.name),
+                            builder: (context) => HistoryScreen(
+                              deviceName: device.name,
+                              deviceId: device.id,
+                            ),
                           ),
                         );
                       },
@@ -89,8 +65,10 @@ class DeviceCard extends StatelessWidget {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) =>
-                                DeviceControlScreen(deviceName: device.name),
+                            builder: (context) => DeviceControlScreen(
+                              deviceId: device.id,
+                              deviceName: device.name,
+                            ),
                           ),
                         );
                       },

@@ -4,26 +4,21 @@ import '../../domain/models/feeding_schedule.dart';
 
 class ScheduleListItem extends StatelessWidget {
   final FeedingSchedule schedule;
-  final Function(bool) onToggle;
+  // ✅  التصحيح: تم حذف onToggle
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const ScheduleListItem({
     super.key,
     required this.schedule,
-    required this.onToggle,
     required this.onEdit,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    // لتنسيق الوقت بشكل جميل مثل "09:30 AM"
     final formattedTime = schedule.time.format(context);
-    final textStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
-      decoration: schedule.isActive ? null : TextDecoration.lineThrough,
-      color: schedule.isActive ? null : Colors.grey,
-    );
+    final textStyle = Theme.of(context).textTheme.bodyLarge;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -40,7 +35,7 @@ class ScheduleListItem extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Switch(value: schedule.isActive, onChanged: onToggle),
+            // ✅  التصحيح: تم حذف الويدجت Switch من هنا
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               onPressed: onEdit,

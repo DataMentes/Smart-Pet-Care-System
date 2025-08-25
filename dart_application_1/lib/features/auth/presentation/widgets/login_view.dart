@@ -1,33 +1,83 @@
 // lib/features/auth/presentation/widgets/login_view.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../../core/api_service.dart';
+// ✅  التصحيح: إضافة الـ imports الناقصة
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
-import '../screens/forgot_password_screen.dart';
-// ✅  التصحيح: استيراد الشاشة الرئيسية
 import '../../../home/presentation/screens/home_screen.dart';
+import '../screens/forgot_password_screen.dart';
 
-class LoginView extends StatelessWidget {
+class LoginView extends StatefulWidget {
   const LoginView({super.key});
+
+  @override
+  State<LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _apiService = ApiService();
+  bool _isLoading = false;
+
+  Future<void> _handleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _apiService.login(
+        _emailController.text,
+        _passwordController.text,
+      );
+
+      if (response.statusCode == 200 && mounted) {
+        final token = jsonDecode(response.body)['token'];
+        await _apiService.saveToken(token);
+
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      } else if (mounted) {
+        final error = jsonDecode(response.body)['message'];
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $error')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('An error occurred: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        _buildForm(context),
-        const SizedBox(height: 30),
-        _buildButtons(context), // تمرير الـ context
-      ],
-    );
-  }
-
-  Widget _buildForm(BuildContext context) {
-    // ... (الكود هنا لم يتغير)
-    return Column(
-      children: [
-        const CustomTextField(labelText: 'Username or Email'),
+        CustomTextField(
+          labelText: 'Username or Email',
+          controller: _emailController,
+        ),
         const SizedBox(height: 20),
-        const CustomTextField(labelText: 'Password', isPassword: true),
+        CustomTextField(
+          labelText: 'Password',
+          isPassword: true,
+          controller: _passwordController,
+        ),
         const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerRight,
@@ -49,25 +99,11 @@ class LoginView extends StatelessWidget {
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildButtons(BuildContext context) {
-    // استقبال الـ context
-    return Column(
-      children: [
-        CustomButton(
-          text: 'Login',
-          // ✅  التصحيح: إضافة منطق الانتقال هنا
-          onPressed: () {
-            // تمامًا مثل شاشة التسجيل، نمسح كل الشاشات السابقة وننتقل للشاشة الرئيسية
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-              (Route<dynamic> route) => false,
-            );
-          },
-        ),
+        const SizedBox(height: 30),
+        if (_isLoading)
+          const CircularProgressIndicator()
+        else
+          CustomButton(text: 'Login', onPressed: _handleLogin),
       ],
     );
   }

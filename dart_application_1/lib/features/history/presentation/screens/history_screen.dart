@@ -1,11 +1,17 @@
 // lib/features/history/presentation/screens/history_screen.dart
 import 'package:flutter/material.dart';
-import 'dart:math';
+import '../../../../core/api_service.dart';
+import '../../domain/models/history_data.dart';
 import '../widgets/consumption_chart.dart';
 
 class HistoryScreen extends StatefulWidget {
   final String deviceName;
-  const HistoryScreen({super.key, required this.deviceName});
+  final String deviceId;
+  const HistoryScreen({
+    super.key,
+    required this.deviceName,
+    required this.deviceId,
+  });
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -14,6 +20,9 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ApiService _apiService = ApiService();
+  late Future<HistoryData> _historyFuture;
+
   DateTimeRange _selectedDateRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 6)),
     end: DateTime.now(),
@@ -23,6 +32,34 @@ class _HistoryScreenState extends State<HistoryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_refreshHistory);
+    _historyFuture = _fetchHistory();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_refreshHistory);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<HistoryData> _fetchHistory() {
+    final periods = ['daily', 'weekly', 'monthly'];
+    final selectedPeriod = periods[_tabController.index];
+    // ✅  التصحيح: استخدام اسم الدالة الصحيح
+    return _apiService.getHistoryFullReport(
+      widget.deviceId,
+      _selectedDateRange,
+      selectedPeriod,
+    );
+  }
+
+  void _refreshHistory() {
+    if (!_tabController.indexIsChanging) {
+      setState(() {
+        _historyFuture = _fetchHistory();
+      });
+    }
   }
 
   void _pickDateRange() async {
@@ -36,92 +73,60 @@ class _HistoryScreenState extends State<HistoryScreen>
       setState(() {
         _selectedDateRange = newDateRange;
       });
+      _refreshHistory();
     }
-  }
-
-  List<ChartDataPoint> _generateMockChartData() {
-    final random = Random();
-    final int count = switch (_tabController.index) {
-      0 => 24,
-      1 => 7,
-      _ => 12,
-    };
-    return List.generate(
-      count,
-      (index) => ChartDataPoint(
-        x: index.toDouble(),
-        y: (random.nextDouble() * 100) + 50,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final mockLogs = {'9:00 AM': '150g', '12:30 PM': '100g', '6:00 PM': '200g'};
-
     return Scaffold(
       appBar: AppBar(title: Text('${widget.deviceName} History')),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildDatePicker(),
-          const SizedBox(height: 20),
+      body: FutureBuilder<HistoryData>(
+        future: _historyFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: Text('No history data found.'));
+          }
 
-          _buildChartCard(
-            title: 'Food Consumption',
-            chart: ConsumptionChart(points: _generateMockChartData()),
-          ),
-          const SizedBox(height: 20),
+          final historyData = snapshot.data!;
 
-          // ✅  التصحيح: تم حذف قسم "Stock Trends" بالكامل من هنا
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Feeding Times (Logs)',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 10),
-                  ...mockLogs.entries.map(
-                    (entry) => ListTile(
-                      leading: const Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.green,
-                      ),
-                      title: Text(entry.key),
-                      trailing: Text(
-                        entry.value,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              _buildDatePicker(),
+              const SizedBox(height: 20),
+              _buildChartCard(
+                title: 'Food Consumption',
+                chart: ConsumptionChart(points: historyData.consumptionPoints),
               ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          ElevatedButton.icon(
-            icon: const Icon(Icons.download),
-            label: const Text('Download Report (CSV/PDF)'),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Exporting data... (Not Implemented)'),
-                ),
-              );
-            },
-          ),
-        ],
+              const SizedBox(height: 20),
+              _buildLogsCard(historyData.feedingLogs),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.download),
+                label: const Text('Download Report (CSV/PDF)'),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Exporting data... (Not Implemented)'),
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Widget _buildDatePicker() {
-    // ... (الكود هنا لم يتغير)
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -154,7 +159,6 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildChartCard({required String title, required Widget chart}) {
-    // ... (الكود هنا لم يتغير)
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -170,10 +174,48 @@ class _HistoryScreenState extends State<HistoryScreen>
                 Tab(text: 'Weekly'),
                 Tab(text: 'Monthly'),
               ],
-              onTap: (_) => setState(() {}),
             ),
             const SizedBox(height: 20),
             chart,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogsCard(List<FeedingLog> logs) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Feeding Times (Logs)',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 10),
+            if (logs.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text('No logs for this period.'),
+                ),
+              )
+            else
+              ...logs.map(
+                (log) => ListTile(
+                  leading: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                  ),
+                  title: Text(log.time),
+                  trailing: Text(
+                    '${log.amountGrams}g',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

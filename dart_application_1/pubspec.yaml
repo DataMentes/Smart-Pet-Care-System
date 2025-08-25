@@ -1,7 +1,7 @@
-name: dart_application_1
-description: A sample command-line application.
-
-# repository: https://github.com/my_org/my_repo
+name: flutter_application_1
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
@@ -33,7 +33,8 @@ dependencies:
   # ... other dependencies
   pinput: ^4.0.0 # أضف هذا السطر
   fl_chart: ^0.68.0 # أضف هذا السطر
-
+  http: ^1.2.1 # لإجراء طلبات الشبكة
+  shared_preferences: ^2.2.3 # لحفظ التوكن
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

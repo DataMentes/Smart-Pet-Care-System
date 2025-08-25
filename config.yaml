@@ -13,4 +13,9 @@ email: smartpetcaresystem@gmail.com
 username: Smart-Pet-Care-System
 password: Smart_care_pet_system_000
 
-# GitHub
+# MQTT broker
+host: b8fde1f028ba4c73969c9d8905059c14.s1.eu.hivemq.cloud
+port: 8883
+websocket: 8884
+client_id: ESP32_PetFeeder_01
+
