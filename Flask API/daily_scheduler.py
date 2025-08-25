@@ -55,20 +55,25 @@ def publish_mqtt_message(topic, payload):
 
 def send_push_notification(user_email, title, body):
     try:
-        response = supabase_admin.table("fcm_tokens").select("fcm_token").eq("email", user_email).single().execute()
-        user_token = response.data.get("fcm_token")
-        if not user_token:
-            print(f"No FCM token found for user: {user_email}")
+        response = supabase_admin.table("fcm_tokens").select("fcm_token").eq("email", user_email).execute()
+
+        if not response.data:
+            print(f"No FCM tokens found for user: {user_email}")
             return
-        message = messaging.Message(
+
+        tokens = [item['fcm_token'] for item in response.data]
+
+        message = messaging.MulticastMessage(
             notification=messaging.Notification(
                 title=title,
                 body=body,
             ),
-            token=user_token,
+            tokens=tokens,
         )
-        response = messaging.send(message)
-        print(f"Successfully sent daily reminder to {user_email}")
+
+        response = messaging.send_multicast(message)
+        print(f"Successfully sent multicast message to {response.success_count} devices for user {user_email}.")
+
     except Exception as e:
         print(f"Error sending push notification to {user_email}: {e}")
 

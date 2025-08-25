@@ -29,29 +29,27 @@ MQTT_PASS = "Smart_care_pet_system_000"
 
 def send_push_notification(user_email, title, body):
     try:
-        response = supabase_admin.table("fcm_tokens").select("fcm_token").eq("email", user_email).limit(1).execute()
+        response = supabase_admin.table("fcm_tokens").select("fcm_token").eq("email", user_email).execute()
+
         if not response.data:
-            print(f"No FCM token found for user: {user_email}")
+            print(f"No FCM tokens found for user: {user_email}")
             return
 
-        user_token = response.data[0].get("fcm_token")
-        if not user_token:
-            print(f"FCM token is empty for user: {user_email}")
-            return
+        tokens = [item['fcm_token'] for item in response.data]
 
-        message = messaging.Message(
+        message = messaging.MulticastMessage(
             notification=messaging.Notification(
                 title=title,
                 body=body,
             ),
-            token=user_token,
+            tokens=tokens,
         )
-        response = messaging.send(message)
-        print('Successfully sent message:', response)
-        print("=" * 30)
+
+        response = messaging.send_multicast(message)
+        print(f"Successfully sent multicast message to {response.success_count} devices for user {user_email}.")
+
     except Exception as e:
         print(f"Error sending push notification to {user_email}: {e}")
-        print("=" * 30)
 
 
 def get_user_email_for_device(device_id):
