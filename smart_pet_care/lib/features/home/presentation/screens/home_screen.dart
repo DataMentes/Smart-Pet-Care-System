@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showAddDeviceDialog() {
-    final nameController = TextEditingController();
+    // ✅  التصحيح: سنستخدم controller واحد فقط
     final idController = TextEditingController();
 
     showDialog(
@@ -41,13 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Device Name (Optional)',
-              ),
-            ),
-            const SizedBox(height: 16),
+            // ✅  التصحيح: حذف حقل اسم الجهاز لأنه غير مستخدم في الـ Backend
             TextField(
               controller: idController,
               decoration: const InputDecoration(labelText: 'Device ID'),
@@ -71,10 +65,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (response.statusCode == 201 && mounted) {
                     _refreshDevices();
                   } else if (mounted) {
-                    final error = jsonDecode(response.body)['message'];
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Error: $error')));
+                    final error = jsonDecode(response.body)['message'] ??
+                        jsonDecode(response.body)['error'];
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text('Error: $error')));
                   }
                 } catch (e) {
                   if (mounted) {
@@ -104,9 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: Icon(isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: () {
-              ThemeProvider.themeNotifier.value = isDarkMode
-                  ? ThemeMode.light
-                  : ThemeMode.dark;
+              ThemeProvider.themeNotifier.value =
+                  isDarkMode ? ThemeMode.light : ThemeMode.dark;
             },
           ),
           IconButton(
@@ -141,14 +134,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+
+                    // ✅  التصحيح: التعامل مع الحالة الفارغة أولاً برسالة ترحيبية
+                    if (snapshot.hasData && snapshot.data!.isEmpty) {
                       return const Center(
-                        child: Text('No devices found. Add one!'),
+                        child: Text(
+                          'Welcome! No devices found.\nAdd your first device to get started.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
                       );
                     }
+
+                    // ✅  التصحيح: التعامل مع الخطأ برسالة أوضح
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Failed to load devices. Please try again.\nError: ${snapshot.error}',
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+
                     final devices = snapshot.data!;
                     return RefreshIndicator(
                       onRefresh: () async => _refreshDevices(),
