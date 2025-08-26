@@ -156,7 +156,7 @@ def signup_verify():
         password = data["password"]
         fcm_token = data.get("fcm_token")
         otp_record_res = supabase_admin.table("otp_codes").select("*").eq("email", email).single().execute()
-        otp_record = otp_record_res.data
+        otp_record = otp_record_res.data[0]
         if not otp_record:
             return jsonify({"error": "Invalid email or no OTP request found"}), 400
         utc_now = datetime.now(datetime.now().astimezone().tzinfo)
@@ -177,7 +177,7 @@ def signup_verify():
         supabase_admin.table("Users").insert(profile_data).execute()
         supabase_admin.table("fcm_tokens").insert(fcm_token_data).execute()
         supabase_admin.table("otp_codes").delete().eq("email", email).execute()
-        return jsonify(auth_response.session.dict()), 201
+        return jsonify(auth_response.user.dict()), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -188,18 +188,21 @@ def login():
         data = request.get_json()
         if not data or "email" not in data or "password" not in data or "fcm_token" not in data:
             return jsonify({"error": "Email, password, and fcm_token are required"}), 400
+
         email = data["email"]
         password = data["password"]
         fcm_token = data["fcm_token"]
+
         auth_response = supabase_user.auth.sign_in_with_password({
             "email": email,
             "password": password
         })
-        supabase_admin.table("fcm_tokens").update({
+
+        supabase_admin.table("fcm_tokens").upsert({
+            "email": email,
             "fcm_token": fcm_token
-        }).eq(
-            "email", email
-        ).execute()
+        }).execute()
+
         return jsonify(auth_response.session.dict()), 200
 
     except Exception as e:
@@ -309,8 +312,8 @@ def get_user_devices():
         jwt = request.headers.get("Authorization").split(" ")[1]
         user = supabase_user.auth.get_user(jwt).user
         if not user: return jsonify({"error": "Invalid token"}), 401
-        devices_response = supabase_admin.table("authenticated_devices").select("device_id").eq("email",
-                                                                                                user.email).execute()
+        devices_response = supabase_admin.table("authenticated_devices").select("device_id, device_name").eq("email",
+                                                                                                             user.email).execute()
         return jsonify(devices_response.data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -330,7 +333,9 @@ def register_new_device():
         auth_device_check = supabase_admin.table("authenticated_devices").select("device_id").eq("device_id",
                                                                                                  device_id).execute()
         if auth_device_check.data: return jsonify({"error": "Device already registered"}), 409
-        link_data = {"device_id": device_id, "email": user.email}
+        device_name = data.get("device_name")
+        if not device_name: return jsonify({"error": "device_name is required"}), 400
+        link_data = {"device_id": device_id, "email": user.email, "device_name": device_name}
         supabase_admin.table("authenticated_devices").insert(link_data).execute()
         return jsonify({"status": "success", "message": f"Device {device_id} registered successfully."}), 201
     except Exception as e:
@@ -343,17 +348,22 @@ def get_all_statuses():
         jwt = request.headers.get("Authorization").split(" ")[1]
         user = supabase_user.auth.get_user(jwt).user
         if not user: return jsonify({"error": "Invalid token"}), 401
-        devices_list_res = supabase_admin.table("authenticated_devices").select("device_id").eq("email",
-                                                                                                user.email).execute()
-        if not devices_list_res.data:
-            return jsonify([])
-        device_ids = [d['device_id'] for d in devices_list_res.data]
+
+        devices_list_res = supabase_admin.table("authenticated_devices").select("device_id, device_name").eq("email",
+                                                                                                             user.email).execute()
+        if not devices_list_res.data: return jsonify([])
+
         all_statuses = []
-        for device_id in device_ids:
+        for device in devices_list_res.data:
+            device_id = device.get("device_id")
             status_res = supabase_admin.table("Sensors_device").select("*").eq("device_id", device_id).order(
                 "timestamp", desc=True).limit(1).single().execute()
-            if status_res.data:
-                all_statuses.append(status_res.data)
+            current_status = {
+                "device_id": device_id,
+                "device_name": device.get("device_name"),
+                "last_reading": status_res.data if status_res.data else None
+            }
+            all_statuses.append(current_status)
         return jsonify(all_statuses)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
