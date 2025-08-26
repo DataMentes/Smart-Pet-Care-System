@@ -28,7 +28,6 @@ MQTT_PASS = "Smart_care_pet_system_000"
 app = Flask(__name__)
 CORS(app)
 
-
 # --- Helper Functions ---
 
 def publish_to_mqtt(topic, payload):
@@ -55,7 +54,6 @@ def publish_to_mqtt(topic, payload):
     except Exception as e:
         print(f"Failed to publish to MQTT: {e}")
 
-
 def send_otp_email(recipient_email, otp_code):
     message = Mail(
         from_email=os.getenv('VERIFIED_SENDER_EMAIL'),
@@ -81,13 +79,11 @@ def send_otp_email(recipient_email, otp_code):
         print(f"Error sending email: {e}")
         return False
 
-
 # --- Public & Status Routes ---
 
 @app.route("/")
 def welcome():
     return "Welcome to the Pet Feeder API"
-
 
 @app.route("/status", methods=["GET"])
 def api_status():
@@ -117,7 +113,6 @@ def api_status():
 
     return jsonify(status_data), 200
 
-
 # --- Authentication Routes ---
 
 @app.route("/auth/signup/request-otp", methods=["POST"])
@@ -142,7 +137,6 @@ def signup_request_otp():
         return jsonify({"message": "A verification code has been sent to your email."})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/auth/signup/verify", methods=["POST"])
 def signup_verify():
@@ -181,7 +175,6 @@ def signup_verify():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/auth/login", methods=["POST"])
 def login():
     try:
@@ -208,7 +201,6 @@ def login():
     except Exception as e:
         return jsonify({"error": "Invalid login credentials", "details": str(e)}), 401
 
-
 @app.route("/auth/password-reset/request-otp", methods=["POST"])
 def password_reset_request():
     try:
@@ -231,7 +223,6 @@ def password_reset_request():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/auth/password-reset/verify-otp", methods=["POST"])
 def password_reset_verify():
     try:
@@ -253,7 +244,6 @@ def password_reset_verify():
         return jsonify({"status": "success", "message": "OTP verified successfully. You can now set a new password."})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/auth/password-reset/confirm", methods=["POST"])
 def password_reset_confirm():
@@ -303,7 +293,6 @@ def password_reset_confirm():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 # --- API Routes (Require Authentication) ---
 
 @app.route("/api/devices", methods=["GET"])
@@ -317,7 +306,6 @@ def get_user_devices():
         return jsonify(devices_response.data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/devices/register", methods=["POST"])
 def register_new_device():
@@ -340,7 +328,6 @@ def register_new_device():
         return jsonify({"status": "success", "message": f"Device {device_id} registered successfully."}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/devices/all-statuses", methods=["GET"])
 def get_all_statuses():
@@ -367,7 +354,6 @@ def get_all_statuses():
         return jsonify(all_statuses)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/devices/<string:device_id>/full-report", methods=["GET"])
 def get_device_full_report(device_id):
@@ -421,7 +407,6 @@ def get_device_full_report(device_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/devices/<string:device_id>/schedule", methods=["GET"])
 def get_device_schedule(device_id):
     try:
@@ -443,7 +428,6 @@ def get_device_schedule(device_id):
         return jsonify({"schedule": schedule_data})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/devices/<string:device_id>/schedule", methods=["POST"])
 def update_device_schedule(device_id):
