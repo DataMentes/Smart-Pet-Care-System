@@ -64,23 +64,23 @@
 #define DISPENSE_OFFSET_GRAMS 30
 
 // --- Scale & Measurement ---
-const int NOISE_THRESHOLD = 3;                   // (جرام) أقل قيمة تغيير نعتبرها مهمة
-const unsigned long STABILITY_DURATION = 5000;   // (3 ثوانٍ) مدة استقرار الوزن الجديد
-const int AUTO_TARE_THRESHOLD = 5;               // (جرام) نطاق اعتبار الوعاء فارغًا
-const unsigned long AUTO_TARE_DURATION = 15000;  // (15 ثانية) مدة بقاء الوعاء فارغًا لتفعيل التصفير التلقائي
+const int NOISE_THRESHOLD = 3;                  // (جرام) أقل قيمة تغيير نعتبرها مهمة
+const unsigned long STABILITY_DURATION = 5000;  // (3 ثوانٍ) مدة استقرار الوزن الجديد
+const int AUTO_TARE_THRESHOLD = 5;              // (جرام) نطاق اعتبار الوعاء فارغًا
+const unsigned long AUTO_TARE_DURATION = 15000; // (15 ثانية) مدة بقاء الوعاء فارغًا لتفعيل التصفير التلقائي
 
 // --- Sensor Thresholds ---
-const int WATER_LEVEL_THRESHOLD = 1350;  // ADC value to determine if water is low.
+const int WATER_LEVEL_THRESHOLD = 1350; // ADC value to determine if water is low.
 
 // --- Timing & Intervals (in milliseconds) ---
-const unsigned long MQTT_RECONNECT_INTERVAL_MS = 5 * 60 * 1000;  // 5 minutes
-const unsigned long WIFI_RECONNECT_INTERVAL_MS = 5 * 60 * 1000;  // 5 minutes
+const unsigned long MQTT_RECONNECT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const unsigned long WIFI_RECONNECT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const unsigned long LCD_UPDATE_INTERVAL_MS = 500;
-const unsigned long SENSOR_PUBLISH_COOLDOWN_MS = 3 * 5 * 1000;           // 3 minutes
-const unsigned long DISPENSE_TIMEOUT_MS = 20000;                         // 20 seconds
-const unsigned long NTP_SYNC_INTERVAL_MS = 12UL * 60UL * 60UL * 1000UL;  // 12 hours
-const unsigned long WIFI_RESET_BUTTON_HOLD_MS = 5000;                    // 5 seconds
-const unsigned long WEIGHT_STABILITY_TIMEOUT_MS = 5 * 2 * 1000;          // 5 minutes to confirm pet has finished eating
+const unsigned long SENSOR_PUBLISH_COOLDOWN_MS = 3 * 5 * 1000;          // 3 minutes
+const unsigned long DISPENSE_TIMEOUT_MS = 20000;                        // 20 seconds
+const unsigned long NTP_SYNC_INTERVAL_MS = 12UL * 60UL * 60UL * 1000UL; // 12 hours
+const unsigned long WIFI_RESET_BUTTON_HOLD_MS = 5000;                   // 5 seconds
+const unsigned long WEIGHT_STABILITY_TIMEOUT_MS = 5 * 2 * 1000;         // 5 minutes to confirm pet has finished eating
 
 // =================================================================================================
 //                                     SECTION 3: GLOBAL OBJECTS & TYPE DEFINITIONS
@@ -107,11 +107,12 @@ NTPClient ntpTimeClient(ntpUdpClient, "pool.ntp.org");
 Preferences preferences;
 
 // --- Custom Data Structures ---
-struct FeedingTime {
+struct FeedingTime
+{
   int hour;
   int minute;
   int grams;
-  int lastExecutionDay;  // Tracks the last day this schedule was run to prevent duplicates.
+  int lastExecutionDay; // Tracks the last day this schedule was run to prevent duplicates.
 };
 
 // =================================================================================================
@@ -127,7 +128,8 @@ unsigned long lastMqttReconnectAttemptTimestamp = 0;
 unsigned long lastWifiReconnectAttemptTimestamp = 0;
 
 // --- Motor Control State ---
-enum MotorState {
+enum MotorState
+{
   MOTOR_IDLE,
   MOTOR_DISPENSING_TOWARD_RIGHT,
   MOTOR_DISPENSING_TOWARD_LEFT,
@@ -157,8 +159,8 @@ int lastKnownWaterState = -1;
 int lastPublishedWeight = 0;
 unsigned long lastSensorDataPublishTimestamp = 0;
 
-const int ANGLE_LEFT  = 10;   // قرب من الحد الأدنى
-const int ANGLE_RIGHT = 170;  // قرب من الحد الأقصى
+const int ANGLE_LEFT = 10;   // قرب من الحد الأدنى
+const int ANGLE_RIGHT = 170; // قرب من الحد الأقصى
 
 // وقت الانتظار – كل ما تزود هيلحق يوصل للنهاية
 int stepDelay = 300; // جرّب 10..20 حسب نوع السيرفو
@@ -189,8 +191,8 @@ unsigned long lastLcdUpdateTimestamp = 0;
 unsigned long buzzerPreviousMillis = 0;
 int buzzerState = LOW;
 int buzzerBeepCount = 0;
-byte customCharArrowUp[8] = { 0b00100, 0b01110, 0b10101, 0b00100, 0b00100, 0b00100, 0b00100, 0b00000 };
-byte customCharArrowDown[8] = { 0b00100, 0b00100, 0b00100, 0b00100, 0b10101, 0b01110, 0b00100, 0b00000 };
+byte customCharArrowUp[8] = {0b00100, 0b01110, 0b10101, 0b00100, 0b00100, 0b00100, 0b00100, 0b00000};
+byte customCharArrowDown[8] = {0b00100, 0b00100, 0b00100, 0b00100, 0b10101, 0b01110, 0b00100, 0b00000};
 
 // --- Offline Data Buffering ---
 int offlineReadingsBufferedCount = 0;
@@ -244,7 +246,8 @@ String createStatusJson(int irState, int waterState, int weight);
  * @brief Initializes the system, hardware, and network connections.
  * Runs once at startup.
  */
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   // --- Generate a unique MQTT client ID from the device's MAC address ---
@@ -266,7 +269,6 @@ void setup() {
   Serial.println(mqttTopicStatus);
   Serial.print("[INIT] Pet Food Consumption Topic: ");
   Serial.println(mqttTopicPetFoodConsumption);
-
 
   // --- Pin Initializations ---
   pinMode(STATUS_LED_PIN, OUTPUT);
@@ -294,10 +296,10 @@ void setup() {
   // --- Data Loading ---
   loadOfflineReadingCount();
   loadScheduleFromNVS();
-  initializeTime();  // Loads saved time first
+  initializeTime(); // Loads saved time first
 
   // --- Network Initializations ---
-  secureWifiClient.setInsecure();  // Allows connection to brokers with self-signed certs if needed.
+  secureWifiClient.setInsecure(); // Allows connection to brokers with self-signed certs if needed.
   mqttClient.setServer(MQTT_BROKER_HOST, MQTT_BROKER_PORT);
   mqttClient.setCallback(onMqttMessageCallback);
 
@@ -312,7 +314,8 @@ void setup() {
  * @brief The main execution loop.
  * This function is non-blocking and orchestrates all device tasks.
  */
-void loop() {
+void loop()
+{
   handleMotorControl();
   // Check for a long-press on the WiFi reset button to enter configuration mode.
   handleConfigurationRequest();
@@ -325,24 +328,26 @@ void loop() {
   // Handle the pet food consumption monitoring state.
   handlePetFoodConsumption();
   // Manage non-blocking buzzer pattern if requested.
-  if (isBuzzerPatternRequested) {
+  if (isBuzzerPatternRequested)
+  {
     handleBuzzerPattern();
   }
   // These handlers only run if no dispensing is in progress to avoid conflicts.
-  if (!isDispensingInProgress && !isMonitoringConsumption) {
+  if (!isDispensingInProgress && !isMonitoringConsumption)
+  {
     // Read sensors, update the LCD, and publish status changes.
     handleSensorAndUI();
     // Check the current time against the schedule to trigger feeding.
     handleScheduleExecution();
-    
+
     // handleAutoTare();
   }
   // If connected to MQTT, attempt to sync any buffered offline data.
-  if (mqttClient.connected()) {
+  if (mqttClient.connected())
+  {
     publishBufferedReadings();
   }
 }
-
 
 // =================================================================================================
 //                                     SECTION 7: CORE LOGIC HANDLERS
@@ -351,65 +356,78 @@ void loop() {
  * @brief Non-blocking handler for the dispenser motor state machine.
  * Manages the dispensing oscillation (back and forth movement).
  */
-void handleMotorControl() {
+void handleMotorControl()
+{
   // If the motor is idle, do nothing.
-  if (currentMotorState == MOTOR_IDLE) return;
+  if (currentMotorState == MOTOR_IDLE)
+    return;
 
   unsigned long currentTime = millis();
 
   // Only check time if we are in an active dispensing state
-  if (currentTime - motorStateChangeTimestamp < stepDelay) {
+  if (currentTime - motorStateChangeTimestamp < stepDelay)
+  {
     return; // Not time to move yet
   }
 
   // Update the timestamp for the next move
   motorStateChangeTimestamp = currentTime;
 
-  switch (currentMotorState) {
-    case MOTOR_DISPENSING_TOWARD_RIGHT:
-      // We were at LEFT, now move to RIGHT
-      dispenserServo.write(ANGLE_RIGHT);
-      // Set the next state to be the opposite direction
-      currentMotorState = MOTOR_DISPENSING_TOWARD_LEFT;
-      break;
+  switch (currentMotorState)
+  {
+  case MOTOR_DISPENSING_TOWARD_RIGHT:
+    // We were at LEFT, now move to RIGHT
+    dispenserServo.write(ANGLE_RIGHT);
+    // Set the next state to be the opposite direction
+    currentMotorState = MOTOR_DISPENSING_TOWARD_LEFT;
+    break;
 
-    case MOTOR_DISPENSING_TOWARD_LEFT:
-      // We were at RIGHT, now move back to LEFT
-      dispenserServo.write(ANGLE_LEFT);
-      // Set the next state to loop back
-      currentMotorState = MOTOR_DISPENSING_TOWARD_RIGHT;
-      break;
+  case MOTOR_DISPENSING_TOWARD_LEFT:
+    // We were at RIGHT, now move back to LEFT
+    dispenserServo.write(ANGLE_LEFT);
+    // Set the next state to loop back
+    currentMotorState = MOTOR_DISPENSING_TOWARD_RIGHT;
+    break;
 
-    case MOTOR_CLOSING:
-      // The dispensing process is over, move to the final closed position
-      dispenserServo.write(ANGLE_LEFT); // Or SERVO_CLOSE_ANGLE if you prefer
-      currentMotorState = MOTOR_IDLE;   // Stop all motor activity
-      Serial.println("[MOTOR FSM] Dispensing complete. Motor is now idle.");
-      break;
+  case MOTOR_CLOSING:
+    // The dispensing process is over, move to the final closed position
+    dispenserServo.write(ANGLE_LEFT); // Or SERVO_CLOSE_ANGLE if you prefer
+    currentMotorState = MOTOR_IDLE;   // Stop all motor activity
+    Serial.println("[MOTOR FSM] Dispensing complete. Motor is now idle.");
+    break;
   }
 }
 
 /**
  * @brief Monitors the WiFi reset button to trigger the WiFiManager configuration portal.
  */
-void handleConfigurationRequest() {
-  if (digitalRead(WIFI_RESET_BUTTON_PIN) == HIGH) {  // Button is pressed (active HIGH)
-    if (!isWifiResetButtonHeld) {
+void handleConfigurationRequest()
+{
+  if (digitalRead(WIFI_RESET_BUTTON_PIN) == HIGH)
+  { // Button is pressed (active HIGH)
+    if (!isWifiResetButtonHeld)
+    {
       isWifiResetButtonHeld = true;
       wifiResetButtonPressedTimestamp = millis();
     }
-  } else {
+  }
+  else
+  {
     isWifiResetButtonHeld = false;
   }
 
-  if (isWifiResetButtonHeld && (millis() - wifiResetButtonPressedTimestamp > WIFI_RESET_BUTTON_HOLD_MS)) {
+  if (isWifiResetButtonHeld && (millis() - wifiResetButtonPressedTimestamp > WIFI_RESET_BUTTON_HOLD_MS))
+  {
     Serial.println("[WIFI] Configuration portal requested via button press.");
     updateLcdScreen("WiFi Setup Mode", "Connect to AP...");
 
-    wifiManager.setConfigPortalTimeout(180);  // 3-minute timeout
-    if (wifiManager.startConfigPortal("Smart_Pet_Care_System_Config")) {
+    wifiManager.setConfigPortalTimeout(180); // 3-minute timeout
+    if (wifiManager.startConfigPortal("Smart_Pet_Care_System_Config"))
+    {
       Serial.println("[WIFI] Configured successfully! Rebooting...");
-    } else {
+    }
+    else
+    {
       Serial.println("[WIFI] Configuration timed out. Rebooting...");
     }
     delay(2000);
@@ -420,26 +438,30 @@ void handleConfigurationRequest() {
 /**
  * @brief Manages background network tasks like maintaining WiFi and MQTT connections.
  */
-void handleNetworkTasks() {
+void handleNetworkTasks()
+{
   // --- WiFi Connection Management ---
-  if (WiFi.status() != WL_CONNECTED) {
-    if (millis() - lastWifiReconnectAttemptTimestamp > WIFI_RECONNECT_INTERVAL_MS) {
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    if (millis() - lastWifiReconnectAttemptTimestamp > WIFI_RECONNECT_INTERVAL_MS)
+    {
       Serial.println("[WIFI] Attempting to reconnect to last known WiFi...");
       WiFi.begin();
       lastWifiReconnectAttemptTimestamp = millis();
     }
-    return;  // No further network tasks if not connected to WiFi.
+    return; // No further network tasks if not connected to WiFi.
   }
 
   // --- Periodic NTP Sync ---
-  if (millis() - lastPeriodicNtpSyncTimestamp > NTP_SYNC_INTERVAL_MS) {
+  if (millis() - lastPeriodicNtpSyncTimestamp > NTP_SYNC_INTERVAL_MS)
+  {
     synchronizeNTP();
     lastPeriodicNtpSyncTimestamp = millis();
   }
 
   // --- MQTT Connection Management ---
   initializeMqttConnection();
-  mqttClient.loop();  // Process incoming messages and maintain connection.
+  mqttClient.loop(); // Process incoming messages and maintain connection.
 }
 
 /**
@@ -447,8 +469,10 @@ void handleNetworkTasks() {
  * @details Uses a fast reading during dispensing to avoid timeouts, then confirms
  * the final weight with a high-quality stable reading before starting consumption monitoring.
  */
-void handleDispensing() {
-  if (!isDispensingInProgress) return;
+void handleDispensing()
+{
+  if (!isDispensingInProgress)
+    return;
 
   unsigned long currentTime = millis();
   int currentWeight = getPositiveWeight(3);
@@ -460,21 +484,26 @@ void handleDispensing() {
 
   bool isTimeout = (currentTime - dispenseStartTimestamp > DISPENSE_TIMEOUT_MS);
 
-  if (currentTime - lastLcdUpdateTimestamp >= LCD_UPDATE_INTERVAL_MS) {
+  if (currentTime - lastLcdUpdateTimestamp >= LCD_UPDATE_INTERVAL_MS)
+  {
     updateLcdScreen("Feeding...", "Weight: " + String(currentWeight) + "g");
     lastLcdUpdateTimestamp = currentTime;
   }
 
-  if (isTimeout || isTargetMet) {
+  if (isTimeout || isTargetMet)
+  {
     controlDispenserMotor("close");
     isDispensingInProgress = false;
-    
-    if (isTargetMet) {
+
+    if (isTargetMet)
+    {
       Serial.printf("[DISPENSE] Target of %dg met (stopped early at %dg).\n", dispenseTargetGrams, currentWeight);
-    } else {
+    }
+    else
+    {
       Serial.println("[DISPENSE] Timed out.");
     }
-    
+
     // Give a very short delay for the falling food to settle before the final accurate reading
     delay(500); // 0.5 second delay
 
@@ -483,7 +512,8 @@ void handleDispensing() {
     lastPublishedWeight = stableWeight;
     Serial.printf("[DISPENSE] Final stable weight after settling: %dg\n", stableWeight);
 
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED)
+    {
       String finalStatus = createStatusJson(lastKnownIrState, lastKnownWaterState, stableWeight);
       publishDeviceStatus(finalStatus);
     }
@@ -502,14 +532,17 @@ void handleDispensing() {
  * @details It waits for the bowl's weight to be stable for a predefined period
  * before taking a final, stable average reading to calculate and publish the consumed amount.
  */
-void handlePetFoodConsumption() {
-  if (!isMonitoringConsumption) return;
+void handlePetFoodConsumption()
+{
+  if (!isMonitoringConsumption)
+    return;
 
   // Use a quick reading for monitoring
   int currentWeight = getPositiveWeight(10);
 
   // Check if the weight has changed significantly (i.e., the pet is eating)
-  if (abs(currentWeight - lastMonitoredWeight) >= NOISE_THRESHOLD) {
+  if (abs(currentWeight - lastMonitoredWeight) >= NOISE_THRESHOLD)
+  {
     // If it changed, reset the stability timer
     lastWeightChangeTimestamp = millis();
   }
@@ -519,18 +552,20 @@ void handlePetFoodConsumption() {
 
   // Check if the weight has been stable for the required duration
   // Note: Using STABILITY_DURATION * 2 or a dedicated constant is a good idea here
-  if (millis() - lastWeightChangeTimestamp > (STABILITY_DURATION * 2)) {
+  if (millis() - lastWeightChangeTimestamp > (STABILITY_DURATION * 2))
+  {
     Serial.println("[CONSUMPTION] Weight has been stable. Calculating and publishing consumption.");
 
     // --- Get a final, high-quality stable reading to ensure accuracy ---
     int finalWeight = getPositiveWeight(30);
-    stableWeight = finalWeight;  // Update the global stable weight as well
+    stableWeight = finalWeight; // Update the global stable weight as well
     lastPublishedWeight = finalWeight;
 
     // Calculate the consumed amount
     int consumedGrams = weightAfterDispensing - finalWeight;
     // Ensure consumption is not negative due to scale noise/drift
-    if (consumedGrams < 0) {
+    if (consumedGrams < 0)
+    {
       consumedGrams = 0;
     }
 
@@ -541,16 +576,19 @@ void handlePetFoodConsumption() {
     serializeJson(doc, payload);
 
     // Publish to the new topic
-    if (mqttClient.connected()) {
+    if (mqttClient.connected())
+    {
       mqttClient.publish(mqttTopicPetFoodConsumption, payload.c_str(), false);
       Serial.println("[MQTT SEND] Published pet food consumption: " + payload);
-    } else {
+    }
+    else
+    {
       Serial.println("[CONSUMPTION] MQTT not connected. Could not publish consumption data.");
     }
 
     // --- End of monitoring cycle ---
     isMonitoringConsumption = false;
-    lastMonitoredWeight = -1;  // Reset for the next cycle
+    lastMonitoredWeight = -1; // Reset for the next cycle
   }
 }
 
@@ -561,7 +599,8 @@ void handlePetFoodConsumption() {
  * used for immediate UI feedback, while the stability filter runs in the
  * background to determine a high-quality, stable weight for MQTT publishing.
  */
-void handleSensorAndUI() {
+void handleSensorAndUI()
+{
   // Get a very fast reading using only one sample for responsiveness
   int rawWeight = getPositiveWeight(1);
   int irState = !digitalRead(IR_SENSOR_PIN);
@@ -570,7 +609,8 @@ void handleSensorAndUI() {
 
   // --- LCD Update Logic ---
   // Update the screen immediately with the fast, raw weight reading.
-  if (millis() - lastLcdUpdateTimestamp >= LCD_UPDATE_INTERVAL_MS) {
+  if (millis() - lastLcdUpdateTimestamp >= LCD_UPDATE_INTERVAL_MS)
+  {
     String line1 = "Tank:" + String(irState ? char(1) : char(2)) + " Water:" + String(waterState ? char(1) : char(2));
     String line2 = "Weight: " + String(rawWeight) + "g"; // Display the responsive raw weight
     updateLcdScreen(line1, line2);
@@ -579,22 +619,28 @@ void handleSensorAndUI() {
 
   // --- Stability Filter Logic (for accurate MQTT publishing) ---
   // This block runs in the background to determine the official 'stableWeight'.
-  if (isWeightStable) {
+  if (isWeightStable)
+  {
     // If the state is stable, check for a significant change that might make it unstable.
-    if (abs(rawWeight - stableWeight) > NOISE_THRESHOLD) {
+    if (abs(rawWeight - stableWeight) > NOISE_THRESHOLD)
+    {
       isWeightStable = false;         // Change state to unstable/monitoring
       unstableSince = millis();       // Start the stability timer
       potentialNewWeight = rawWeight; // This is the new weight we are monitoring
     }
-  } else { // If the state is already unstable...
+  }
+  else
+  { // If the state is already unstable...
     // Check if the weight is still fluctuating.
-    if (abs(rawWeight - potentialNewWeight) > NOISE_THRESHOLD) {
+    if (abs(rawWeight - potentialNewWeight) > NOISE_THRESHOLD)
+    {
       unstableSince = millis(); // Reset the timer if it's still changing
       potentialNewWeight = rawWeight;
     }
 
     // Check if the weight has been calm for the required duration.
-    if (millis() - unstableSince >= STABILITY_DURATION) {
+    if (millis() - unstableSince >= STABILITY_DURATION)
+    {
       // Confirm the new stable weight with a high-quality reading
       stableWeight = getPositiveWeight(20);
       isWeightStable = true; // Return to the stable state
@@ -608,7 +654,8 @@ void handleSensorAndUI() {
   bool isSignificantChange = (irState != lastKnownIrState || waterState != lastKnownWaterState || stableWeight != lastPublishedWeight);
   bool isCooldownOver = (millis() - lastSensorDataPublishTimestamp > SENSOR_PUBLISH_COOLDOWN_MS);
 
-  if (isSignificantChange && isCooldownOver && isWeightStable) {
+  if (isSignificantChange && isCooldownOver && isWeightStable)
+  {
     // Update the last known state variables with the new, confirmed values
     lastKnownIrState = irState;
     lastKnownWaterState = waterState;
@@ -616,10 +663,13 @@ void handleSensorAndUI() {
     lastSensorDataPublishTimestamp = millis(); // Reset the cooldown timer
 
     // Publish or buffer the new state
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED)
+    {
       String payload = createStatusJson(irState, waterState, stableWeight);
       publishDeviceStatus(payload);
-    } else {
+    }
+    else
+    {
       bufferSensorReadingOffline(irState, waterState, stableWeight);
     }
   }
@@ -628,9 +678,11 @@ void handleSensorAndUI() {
 /**
  * @brief Checks the current time against the loaded schedule to initiate a feeding cycle.
  */
-void handleScheduleExecution() {
+void handleScheduleExecution()
+{
   time_t now = getCurrentEpochTime();
-  if (now == 0) return;
+  if (now == 0)
+    return;
 
   struct tm timeinfo;
   localtime_r(&now, &timeinfo);
@@ -638,39 +690,48 @@ void handleScheduleExecution() {
   int currentMinute = timeinfo.tm_min;
   int dayOfYear = timeinfo.tm_yday;
 
-
-  for (int i = 0; i < activeScheduleCount; i++) {
-    if (feedingSchedule[i].hour == currentHour && feedingSchedule[i].minute == currentMinute) {
-      if (feedingSchedule[i].lastExecutionDay != dayOfYear) {
-        Serial.printf("[SCHEDULE] Match found for %02d:%02d. Starting dispense of %d grams.\n", currentHour, currentMinute, feedingSchedule[i].grams);
+  for (int i = 0; i < activeScheduleCount; i++)
+  {
+    if (feedingSchedule[i].hour == currentHour && feedingSchedule[i].minute == currentMinute)
+    {
+      if (feedingSchedule[i].lastExecutionDay != dayOfYear)
+      {
         feedingSchedule[i].lastExecutionDay = dayOfYear;
 
-        if (isDispensingInProgress || isMonitoringConsumption) {
+        if (isDispensingInProgress || isMonitoringConsumption)
+        {
           Serial.println("[WARN] Schedule match, but another process is active.");
           return;
         }
 
-        // --- Start Dispensing ---
-        tareBowlScale();
-        stableWeight = 0;
-        lastPublishedWeight = 0;
-        isDispensingInProgress = true;
-        dispenseTargetGrams = feedingSchedule[i].grams;
-        dispenseStartTimestamp = millis();
+        // --- MODIFIED LOGIC TO ADD TO CURRENT WEIGHT ---
+        // REMOVED: tareBowlScale();
+        // REMOVED: stableWeight = 0;
+        // REMOVED: lastPublishedWeight = 0;
 
+        // ADDED: Calculate the new target based on the current stable weight.
+        int amountToDispense = feedingSchedule[i].grams;
+        int currentBowlWeight = getPositiveWeight(5);
+        dispenseTargetGrams = currentBowlWeight + amountToDispense;
+
+        Serial.printf("[SCHEDULE] Match found. Current: %dg, Adding: %dg, New Target: %dg\n", currentBowlWeight, amountToDispense, dispenseTargetGrams);
+
+        isDispensingInProgress = true;
+        dispenseStartTimestamp = millis();
         controlDispenserMotor("open");
         triggerBuzzer();
-        break;  // اخرج من اللوب بعد العثور على تطابق وبدء التنفيذ
+        break;
       }
     }
   }
 }
-
 /**
  * @brief Manages a non-blocking 3-beep buzzer pattern.
  */
-void handleBuzzerPattern() {
-  if (!isBuzzerPatternActive) {
+void handleBuzzerPattern()
+{
+  if (!isBuzzerPatternActive)
+  {
     // Start the pattern
     isBuzzerPatternActive = true;
     buzzerBeepCount = 0;
@@ -681,18 +742,21 @@ void handleBuzzerPattern() {
   }
 
   unsigned long currentMillis = millis();
-  if (currentMillis - buzzerPreviousMillis >= 500) {  // Toggle every 0.5 seconds
+  if (currentMillis - buzzerPreviousMillis >= 500)
+  { // Toggle every 0.5 seconds
     buzzerPreviousMillis = currentMillis;
     buzzerState = !buzzerState;
     digitalWrite(BUZZER_PIN, buzzerState);
 
     // A full beep cycle (ON -> OFF) is complete when the buzzer turns off.
-    if (buzzerState == LOW) {
+    if (buzzerState == LOW)
+    {
       buzzerBeepCount++;
-      if (buzzerBeepCount >= 3) {
+      if (buzzerBeepCount >= 3)
+      {
         isBuzzerPatternActive = false;
-        isBuzzerPatternRequested = false;  // Reset the request flag
-        digitalWrite(BUZZER_PIN, LOW);     // Ensure it's off
+        isBuzzerPatternRequested = false; // Reset the request flag
+        digitalWrite(BUZZER_PIN, LOW);    // Ensure it's off
       }
     }
   }
@@ -701,29 +765,28 @@ void handleBuzzerPattern() {
  * @brief Triggers a manual feeding cycle.
  * @param grams The amount of food to dispense.
  */
-void triggerManualFeed(int grams) {
-  // Guard clause: Do not start a new feed if one is already in progress or being monitored.
-  if (isDispensingInProgress || isMonitoringConsumption) {
+void triggerManualFeed(int grams)
+{
+  if (isDispensingInProgress || isMonitoringConsumption)
+  {
     Serial.println("[FEED NOW] Request ignored: a feeding or monitoring cycle is already active.");
     return;
   }
-  // Guard clause: Ensure the requested amount is valid.
-  if (grams <= 0) {
+  if (grams <= 0)
+  {
     Serial.println("[FEED NOW] Request ignored: grams must be a positive number.");
     return;
   }
 
-  Serial.printf("[FEED NOW] Manual feed triggered for %d grams.\n", grams);
+  // ADDED: Calculate the new target based on the current stable weight.
+  int amountToDispense = grams;
+  int currentBowlWeight = getPositiveWeight(5);
+  dispenseTargetGrams = currentBowlWeight + amountToDispense;
 
-  // This logic is similar to starting a scheduled feed
-  tareBowlScale();
-  stableWeight = 0;
-  lastPublishedWeight = 0;
+  Serial.printf("[FEED NOW] Manual feed. Current: %dg, Adding: %dg, New Target: %dg\n", currentBowlWeight, amountToDispense, dispenseTargetGrams);
 
   isDispensingInProgress = true;
-  dispenseTargetGrams = grams;
   dispenseStartTimestamp = millis();
-
   controlDispenserMotor("open");
   triggerBuzzer();
 }
@@ -733,18 +796,24 @@ void triggerManualFeed(int grams) {
 /**
  * @brief Ensures the MQTT client is connected. Attempts to reconnect if necessary.
  */
-void initializeMqttConnection() {
-  if (mqttClient.connected()) return;
+void initializeMqttConnection()
+{
+  if (mqttClient.connected())
+    return;
 
-  if ((millis() - lastMqttReconnectAttemptTimestamp > MQTT_RECONNECT_INTERVAL_MS) || (lastMqttReconnectAttemptTimestamp == 0)) {
+  if ((millis() - lastMqttReconnectAttemptTimestamp > MQTT_RECONNECT_INTERVAL_MS) || (lastMqttReconnectAttemptTimestamp == 0))
+  {
     lastMqttReconnectAttemptTimestamp = millis();
     Serial.print("[MQTT] Attempting to connect...");
-    if (mqttClient.connect(mqttClientID, MQTT_USERNAME, MQTT_PASSWORD)) {
+    if (mqttClient.connect(mqttClientID, MQTT_USERNAME, MQTT_PASSWORD))
+    {
       Serial.println(" connected.");
       mqttClient.subscribe(mqttTopicSchedule);
       mqttClient.subscribe(mqttTopicFeedNow);
-      ntpTimeClient.begin();  // Re-initialize NTP client after connection
-    } else {
+      ntpTimeClient.begin(); // Re-initialize NTP client after connection
+    }
+    else
+    {
       Serial.print(" failed, rc=");
       Serial.println(mqttClient.state());
     }
@@ -757,35 +826,42 @@ void initializeMqttConnection() {
  * @param payload The message payload.
  * @param length The length of the payload.
  */
-void onMqttMessageCallback(char *topic, byte *payload, unsigned int length) {
+void onMqttMessageCallback(char *topic, byte *payload, unsigned int length)
+{
   String message;
   message.reserve(length + 1);
-  for (unsigned int i = 0; i < length; i++) {
+  for (unsigned int i = 0; i < length; i++)
+  {
     message += (char)payload[i];
   }
   Serial.println("[MQTT] Message received on " + String(topic) + ": " + message);
 
   // --- Handle Schedule Updates ---
-  if (String(topic) == mqttTopicSchedule) {
+  if (String(topic) == mqttTopicSchedule)
+  {
     preferences.begin("pet-feeder", true);
-    if (preferences.getString("schedule", "[]").equals(message)) {
+    if (preferences.getString("schedule", "[]").equals(message))
+    {
       preferences.end();
-      return;  // No update needed if schedule is identical
+      return; // No update needed if schedule is identical
     }
     preferences.end();
     parseScheduleFromJson(message);
   }
   // --- ✨ Handle "Feed Now" Requests ---
-  else if (String(topic) == mqttTopicFeedNow) {
+  else if (String(topic) == mqttTopicFeedNow)
+  {
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, message);
 
-    if (err) {
+    if (err)
+    {
       Serial.println("[FEED NOW] Failed to parse JSON payload.");
       return;
     }
 
-    if (!doc.containsKey("grams") || !doc["grams"].is<int>()) {
+    if (!doc.containsKey("grams") || !doc["grams"].is<int>())
+    {
       Serial.println("[FEED NOW] Invalid payload. Expecting JSON with an integer 'grams' key.");
       return;
     }
@@ -799,11 +875,15 @@ void onMqttMessageCallback(char *topic, byte *payload, unsigned int length) {
  * @brief Publishes a status message to the MQTT status topic.
  * @param message The string message to publish.
  */
-void publishDeviceStatus(const String &message) {
-  if (mqttClient.connected()) {
+void publishDeviceStatus(const String &message)
+{
+  if (mqttClient.connected())
+  {
     mqttClient.publish(mqttTopicStatus, message.c_str(), false);
     Serial.println("[MQTT SEND] " + message);
-  } else {
+  }
+  else
+  {
     Serial.println("[MQTT WARN] Client not connected. Cannot publish status.");
   }
 }
@@ -811,33 +891,39 @@ void publishDeviceStatus(const String &message) {
 /**
  * @brief Iterates through buffered offline readings and publishes them to MQTT.
  */
-void publishBufferedReadings() {
-  if (offlineReadingsBufferedCount == 0 || !mqttClient.connected()) return;
+void publishBufferedReadings()
+{
+  if (offlineReadingsBufferedCount == 0 || !mqttClient.connected())
+    return;
 
   Serial.println("[SYNC] Starting sync of " + String(offlineReadingsBufferedCount) + " buffered readings...");
   preferences.begin("readings", false);
 
   bool allSyncsSuccessful = true;
-  for (int i = 0; i < offlineReadingsBufferedCount; i++) {
+  for (int i = 0; i < offlineReadingsBufferedCount; i++)
+  {
     String key = "reading_" + String(i);
     String simplePayload = preferences.getString(key.c_str(), "");
-    if (simplePayload != "") {
+    if (simplePayload != "")
+    {
       int ir, water;
       float weight;
       sscanf(simplePayload.c_str(), "%d,%d,%d", &ir, &water, &weight);
       String jsonPayload = createStatusJson(ir, water, weight);
 
-      if (!mqttClient.publish(mqttTopicStatus, jsonPayload.c_str(), false)) {
+      if (!mqttClient.publish(mqttTopicStatus, jsonPayload.c_str(), false))
+      {
         Serial.println("[SYNC] Failed to publish reading #" + String(i) + ". Halting sync.");
         allSyncsSuccessful = false;
         break;
       }
       Serial.println("[SYNC] Published reading #" + String(i));
-      delay(100);  // Small delay to avoid flooding the broker
+      delay(100); // Small delay to avoid flooding the broker
     }
   }
 
-  if (allSyncsSuccessful) {
+  if (allSyncsSuccessful)
+  {
     Serial.println("[SYNC] All buffered readings sent. Clearing offline storage.");
     preferences.clear();
     offlineReadingsBufferedCount = 0;
@@ -853,11 +939,13 @@ void publishBufferedReadings() {
 /**
  * @brief Saves the current feeding schedule array to Non-Volatile Storage (NVS).
  */
-void saveScheduleToNVS() {
+void saveScheduleToNVS()
+{
   preferences.begin("pet-feeder", false);
   JsonDocument doc;
   JsonArray array = doc.to<JsonArray>();
-  for (int i = 0; i < activeScheduleCount; i++) {
+  for (int i = 0; i < activeScheduleCount; i++)
+  {
     JsonObject feed = array.add<JsonObject>();
     feed["device_id"] = mqttClientID;
     feed["food_weighted"] = feedingSchedule[i].grams;
@@ -875,8 +963,9 @@ void saveScheduleToNVS() {
 /**
  * @brief Loads the feeding schedule from NVS into the global array.
  */
-void loadScheduleFromNVS() {
-  preferences.begin("pet-feeder", true);  // Read-only mode
+void loadScheduleFromNVS()
+{
+  preferences.begin("pet-feeder", true); // Read-only mode
   String scheduleJson = preferences.getString("schedule", "[]");
   preferences.end();
 
@@ -892,8 +981,10 @@ void loadScheduleFromNVS() {
  * @param waterState The state of the water sensor (1 or 0).
  * @param weight The current weight reading.
  */
-void bufferSensorReadingOffline(int irState, int waterState, int weight) {
-  if (offlineReadingsBufferedCount >= MAX_BUFFERED_READINGS) {
+void bufferSensorReadingOffline(int irState, int waterState, int weight)
+{
+  if (offlineReadingsBufferedCount >= MAX_BUFFERED_READINGS)
+  {
     Serial.println("[BUFFER] Local storage is full. Discarding new reading.");
     return;
   }
@@ -911,7 +1002,8 @@ void bufferSensorReadingOffline(int irState, int waterState, int weight) {
 /**
  * @brief Reads the count of buffered readings from NVS at startup.
  */
-void loadOfflineReadingCount() {
+void loadOfflineReadingCount()
+{
   preferences.begin("readings", true);
   offlineReadingsBufferedCount = preferences.getInt("count", 0);
   preferences.end();
@@ -924,16 +1016,20 @@ void loadOfflineReadingCount() {
 /**
  * @brief Initializes the time system. Loads saved time from NVS and sets the timezone.
  */
-void initializeTime() {
+void initializeTime()
+{
   // --- Load the last synchronized time from NVS ---
   preferences.begin("time", true);
   lastNtpSyncMillis = preferences.getULong("lastSyncMillis", 0);
   lastNtpEpochTime = preferences.getLong("lastNTPTime", 0);
   preferences.end();
 
-  if (lastNtpEpochTime > 0) {
+  if (lastNtpEpochTime > 0)
+  {
     Serial.println("[TIME] Restored time from NVS.");
-  } else {
+  }
+  else
+  {
     Serial.println("[TIME] No saved time found in NVS.");
   }
 
@@ -948,8 +1044,10 @@ void initializeTime() {
 /**
  * @brief Forces an update from the NTP server and saves the new time to NVS.
  */
-void synchronizeNTP() {
-  if (WiFi.status() == WL_CONNECTED) {
+void synchronizeNTP()
+{
+  if (WiFi.status() == WL_CONNECTED)
+  {
     ntpTimeClient.update();
     lastNtpEpochTime = ntpTimeClient.getEpochTime();
     lastNtpSyncMillis = millis();
@@ -960,7 +1058,9 @@ void synchronizeNTP() {
     preferences.end();
 
     Serial.println("[TIME] NTP time synchronized and saved to NVS.");
-  } else {
+  }
+  else
+  {
     Serial.println("[TIME] Cannot sync NTP, no WiFi connection.");
   }
 }
@@ -968,37 +1068,43 @@ void synchronizeNTP() {
 /**
  * @brief Gets the current time as a Unix epoch timestamp.
  * @return The current epoch time, or 0 if time has not been synchronized.
- * @details Provides a resilient way to get the current time. If online, it attempts a 
- * fresh NTP sync. If the sync fails or the device is offline, it calculates 
+ * @details Provides a resilient way to get the current time. If online, it attempts a
+ * fresh NTP sync. If the sync fails or the device is offline, it calculates
  * the time based on the last successful sync and the device's uptime (millis()).
  * This prevents time from becoming invalid during brief network interruptions.
  */
-time_t getCurrentEpochTime() {
+time_t getCurrentEpochTime()
+{
   // Case 1: Device is connected to WiFi. Attempt to get the freshest time.
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED)
+  {
     // Attempt to update the time from the NTP server.
-    if (ntpTimeClient.update()) {
+    if (ntpTimeClient.update())
+    {
       // If successful, refresh our local time anchor points. This is crucial
       // to prevent drift and ensures our offline calculations are accurate.
       lastNtpEpochTime = ntpTimeClient.getEpochTime();
       lastNtpSyncMillis = millis();
-      return lastNtpEpochTime;  // Return the fresh, accurate time.
+      return lastNtpEpochTime; // Return the fresh, accurate time.
     }
     // If the NTP update fails (e.g., UDP packet loss), fall back to calculation.
-    else {
+    else
+    {
       unsigned long elapsedSeconds = (millis() - lastNtpSyncMillis) / 1000;
       return lastNtpEpochTime + elapsedSeconds;
     }
   }
   // Case 2: Device is offline, but we have a valid time saved from a previous sync.
-  else if (lastNtpEpochTime > 0) {
+  else if (lastNtpEpochTime > 0)
+  {
     // Calculate the current time by adding the elapsed device uptime to our last anchor.
     unsigned long elapsedSeconds = (millis() - lastNtpSyncMillis) / 1000;
     return lastNtpEpochTime + elapsedSeconds;
   }
   // Case 3: Device is offline and has never successfully synced the time.
-  else {
-    return 0;  // Return 0 to indicate that the time is unknown.
+  else
+  {
+    return 0; // Return 0 to indicate that the time is unknown.
   }
 }
 
@@ -1006,13 +1112,15 @@ time_t getCurrentEpochTime() {
  * @brief Formats the current time into a "YYYY-MM-DD HH:MM" string.
  * @return A formatted string representation of the current time, or "Offline" if unavailable.
  */
-String getFormattedDateTimeString() {
+String getFormattedDateTimeString()
+{
   time_t epochTime = getCurrentEpochTime();
-  if (epochTime == 0) {
+  if (epochTime == 0)
+  {
     return "Time Unsynced";
   }
   struct tm timeinfo;
-  gmtime_r(&epochTime, &timeinfo);  // Using gmtime for a consistent UTC base
+  gmtime_r(&epochTime, &timeinfo); // Using gmtime for a consistent UTC base
   char buffer[30];
   strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M", &timeinfo);
   return String(buffer);
@@ -1025,48 +1133,57 @@ String getFormattedDateTimeString() {
  * @brief Initiates or stops the motor control state machine.
  * @param state "open" to start oscillation, "close" to stop.
  */
-void controlDispenserMotor(const char *state) {
+void controlDispenserMotor(const char *state)
+{
   Serial.print("[MOTOR] Action requested: ");
   Serial.println(state);
 
-  if (strcmp(state, "open") == 0 && currentMotorState == MOTOR_IDLE) {
+  if (strcmp(state, "open") == 0 && currentMotorState == MOTOR_IDLE)
+  {
     // Start the oscillation by moving to the first position
     dispenserServo.write(ANGLE_LEFT);
     motorStateChangeTimestamp = millis();
     currentMotorState = MOTOR_DISPENSING_TOWARD_RIGHT; // Set state to start the loop
-  } 
-  else if (strcmp(state, "close") == 0) {
+  }
+  else if (strcmp(state, "close") == 0)
+  {
     // Set the state to closing, which will be handled by the state machine
     currentMotorState = MOTOR_CLOSING;
   }
 }
-
 
 /**
  * @brief Updates the LCD screen only if the content of the lines has changed.
  * @param line1 The string to display on the first line.
  * @param line2 The string to display on the second line.
  */
-void updateLcdScreen(const String &line1, const String &line2) {
-  if (line1 != lastLcdLine1) {
+void updateLcdScreen(const String &line1, const String &line2)
+{
+  if (line1 != lastLcdLine1)
+  {
     lcd.setCursor(0, 0);
     lcd.print(line1.substring(0, LCD_COLUMNS));
-    for (int i = line1.length(); i < LCD_COLUMNS; i++) lcd.print(" ");
+    for (int i = line1.length(); i < LCD_COLUMNS; i++)
+      lcd.print(" ");
     lastLcdLine1 = line1;
   }
-  if (line2 != lastLcdLine2) {
+  if (line2 != lastLcdLine2)
+  {
     lcd.setCursor(0, 1);
     lcd.print(line2.substring(0, LCD_COLUMNS));
-    for (int i = line2.length(); i < LCD_COLUMNS; i++) lcd.print(" ");
+    for (int i = line2.length(); i < LCD_COLUMNS; i++)
+      lcd.print(" ");
     lastLcdLine2 = line2;
   }
 }
 
-int readBowlWeight() {
+int readBowlWeight()
+{
   return getPositiveWeight(10);
 }
 
-void tareBowlScale() {
+void tareBowlScale()
+{
   scale.tare(20);
   Serial.println("[SCALE] Scale has been tared.");
 }
@@ -1074,15 +1191,18 @@ void tareBowlScale() {
 /**
  * @brief Sets a flag to request the buzzer pattern to start.
  */
-void triggerBuzzer() {
+void triggerBuzzer()
+{
   isBuzzerPatternRequested = true;
 }
 /**
  * @brief Reads the scale, rounds the value, and ensures it's never negative.
  */
-int getPositiveWeight(int samples = 10) {
+int getPositiveWeight(int samples = 10)
+{
   int weight = round(scale.get_units(samples));
-  if (weight < 0) {
+  if (weight < 0)
+  {
     return 0;
   }
   return weight;
@@ -1091,9 +1211,12 @@ int getPositiveWeight(int samples = 10) {
 /**
  * @brief Checks for a press on the external tare button to zero the scale.
  */
-void handleTareButton() {
-  if (digitalRead(TARE_BUTTON_PIN) == HIGH) {
-    if (millis() - lastTareButtonPress > 1000) {
+void handleTareButton()
+{
+  if (digitalRead(TARE_BUTTON_PIN) == HIGH)
+  {
+    if (millis() - lastTareButtonPress > 1000)
+    {
       Serial.println("[TARE] External button pressed. Taring the scale...");
       tareBowlScale();
       stableWeight = getPositiveWeight(30);
@@ -1108,24 +1231,33 @@ void handleTareButton() {
 /**
  * @brief Handles automatic taring (zeroing) of the scale to combat drift.
  */
-void handleAutoTare() {
-  if (isWeightStable) {
-    if (abs(stableWeight) < AUTO_TARE_THRESHOLD) {
-      if (!isPotentiallyEmpty) {
+void handleAutoTare()
+{
+  if (isWeightStable)
+  {
+    if (abs(stableWeight) < AUTO_TARE_THRESHOLD)
+    {
+      if (!isPotentiallyEmpty)
+      {
         isPotentiallyEmpty = true;
         nearZeroSince = millis();
       }
-      if (millis() - nearZeroSince >= AUTO_TARE_DURATION) {
+      if (millis() - nearZeroSince >= AUTO_TARE_DURATION)
+      {
         Serial.println("\n[AUTO-TARE] Correcting drift...");
         tareBowlScale();
         stableWeight = getPositiveWeight(30);
         lastPublishedWeight = stableWeight;
         isPotentiallyEmpty = false;
       }
-    } else {
+    }
+    else
+    {
       isPotentiallyEmpty = false;
     }
-  } else {
+  }
+  else
+  {
     isPotentiallyEmpty = false;
   }
 }
@@ -1139,33 +1271,42 @@ void handleAutoTare() {
  * when the schedule is refreshed.
  * @param jsonPayload The JSON string to parse.
  */
-void parseScheduleFromJson(const String &jsonPayload) {
+void parseScheduleFromJson(const String &jsonPayload)
+{
   JsonDocument doc;
   DeserializationError err = deserializeJson(doc, jsonPayload);
   FeedingTime newSchedule[MAX_SCHEDULED_FEEDS];
   int newScheduleCount = 0;
   JsonArray array = doc["schedule"];
 
-  for (JsonObject feed : array) {
-    if (newScheduleCount >= MAX_SCHEDULED_FEEDS) break;
+  for (JsonObject feed : array)
+  {
+    if (newScheduleCount >= MAX_SCHEDULED_FEEDS)
+      break;
 
-    if (!feed.containsKey("amount") || !feed.containsKey("time")) continue;
-    if (!feed["amount"].is<int>() || !feed["time"].is<String>()) continue;
+    if (!feed.containsKey("amount") || !feed.containsKey("time"))
+      continue;
+    if (!feed["amount"].is<int>() || !feed["time"].is<String>())
+      continue;
 
     int grams = feed["amount"];
     const char *timestamp = feed["time"];
     int hour = -1, minute = -1;
     sscanf(timestamp, "%d:%d", &hour, &minute);
 
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || grams <= 0) continue;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || grams <= 0)
+      continue;
 
-    newSchedule[newScheduleCount] = { hour, minute, grams, -1 };
+    newSchedule[newScheduleCount] = {hour, minute, grams, -1};
     newScheduleCount++;
   }
 
-  for (int i = 0; i < newScheduleCount; i++) {
-    for (int j = 0; j < activeScheduleCount; j++) {
-      if (newSchedule[i].hour == feedingSchedule[j].hour && newSchedule[i].minute == feedingSchedule[j].minute) {
+  for (int i = 0; i < newScheduleCount; i++)
+  {
+    for (int j = 0; j < activeScheduleCount; j++)
+    {
+      if (newSchedule[i].hour == feedingSchedule[j].hour && newSchedule[i].minute == feedingSchedule[j].minute)
+      {
         newSchedule[i].lastExecutionDay = feedingSchedule[j].lastExecutionDay;
         break;
       }
@@ -1173,7 +1314,8 @@ void parseScheduleFromJson(const String &jsonPayload) {
   }
 
   activeScheduleCount = newScheduleCount;
-  for (int i = 0; i < activeScheduleCount; i++) {
+  for (int i = 0; i < activeScheduleCount; i++)
+  {
     feedingSchedule[i] = newSchedule[i];
   }
 
@@ -1187,13 +1329,14 @@ void parseScheduleFromJson(const String &jsonPayload) {
  * @param weight The current weight reading.
  * @return A JSON string.
  */
-String createStatusJson(int irState, int waterState, int weight) {
+String createStatusJson(int irState, int waterState, int weight)
+{
   JsonDocument doc;
   JsonObject status = doc.to<JsonObject>();
 
   status["food_weighted"] = (int)weight;
   status["water_level"] = waterState ? "high" : "low";
-  status["main_stock"] = irState ? "high" : "low";  // Assuming IR 'high' means full
+  status["main_stock"] = irState ? "high" : "low"; // Assuming IR 'high' means full
 
   String payload;
   serializeJson(doc, payload);

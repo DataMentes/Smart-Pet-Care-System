@@ -27,9 +27,9 @@ MQTT_BROKER = "b8fde1f028ba4c73969c9d8905059c14.s1.eu.hivemq.cloud"
 MQTT_PORT = 8883
 MQTT_USER = "Smart-Pet-Care-System"
 MQTT_PASS = "Smart_care_pet_system_000"
-
+os.getcwd()
 try:
-    cred_path = "firebase-service-account.json"
+    cred_path = os.path.join(os.getcwd(), "firebase-service-account.json")
     cred = credentials.Certificate(cred_path)
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)

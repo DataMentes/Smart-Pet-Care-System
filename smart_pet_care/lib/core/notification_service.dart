@@ -8,8 +8,7 @@ class NotificationService {
 
   void initialize() {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings(
-            '@mipmap/ic_launcher'); // استخدم أيقونة التطبيق
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
@@ -24,7 +23,7 @@ class NotificationService {
       final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       const NotificationDetails notificationDetails = NotificationDetails(
         android: AndroidNotificationDetails(
-          "smart_pet_care_channel", // معرف القناة
+          "smart_pet_care_channel",
           "Smart Pet Care Channel",
           importance: Importance.max,
           priority: Priority.high,

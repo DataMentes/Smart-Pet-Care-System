@@ -8,8 +8,7 @@ import '../features/device_control/domain/models/feeding_schedule.dart';
 import '../features/history/domain/models/history_data.dart';
 
 class ApiService {
-  // ✅ تأكد دائمًا من أن هذا هو الـ IP الصحيح لجهازك
-  final String _baseUrl = 'http://192.168.1.8:5000';
+  final String _baseUrl = 'http://10.190.227.248:5000';
 
   Future<void> saveToken(String rawSessionData) async {
     final prefs = await SharedPreferences.getInstance();
@@ -46,7 +45,7 @@ class ApiService {
   Future<http.Response> passwordResetRequest(String email) async {
     final url = Uri.parse(
       '$_baseUrl/auth/password-reset/request-otp',
-    ); // ✅  تم تصحيح المسار
+    );
     return await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -57,7 +56,7 @@ class ApiService {
   Future<http.Response> passwordResetVerify(String email, String otp) async {
     final url = Uri.parse(
       '$_baseUrl/auth/password-reset/verify-otp',
-    ); // ✅  تم تصحيح المسار
+    );
     return await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -72,7 +71,7 @@ class ApiService {
   ) async {
     final url = Uri.parse(
       '$_baseUrl/auth/password-reset/confirm',
-    ); // ✅  تم تصحيح المسار
+    );
     return await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -123,7 +122,6 @@ class ApiService {
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      // الـ Backend يرسل كائن JSON يحتوي على مفتاح اسمه "schedule"
       final List<dynamic> scheduleData = data['schedule'] ?? [];
       return scheduleData
           .map((json) => FeedingSchedule.fromJson(json))
@@ -155,12 +153,10 @@ class ApiService {
   Future<http.Response> feedNow(String deviceId, int amount) async {
     final topic = 'petfeeder/devices/$deviceId/feed-now';
     final payload = jsonEncode({'amount_grams': amount});
-    // هذه الدالة يفترض أن تتواصل مع MQTT مباشرة أو عبر API
-    // للتوافق مع كودك، سنفترض وجود API endpoint لها
     final token = await getToken();
     final url = Uri.parse(
       '$_baseUrl/api/devices/$deviceId/feed-now',
-    ); // افترضنا وجود هذا المسار
+    );
     return await http.post(
       url,
       headers: {
@@ -171,7 +167,6 @@ class ApiService {
     );
   }
 
-  // --- دوال شاشة السجل ---
   Future<HistoryData> getHistoryFullReport(
     String deviceId,
     DateTimeRange dateRange,
@@ -181,7 +176,7 @@ class ApiService {
     final url =
         Uri.parse('$_baseUrl/api/devices/$deviceId/full-report').replace(
       queryParameters: {
-        'period': period, // weekly or monthly
+        'period': period,
       },
     );
     final response = await http.get(
@@ -189,7 +184,6 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
-      // الـ Backend يرسل chart_data مباشرة، سنقوم بمعالجته
       final rawData = jsonDecode(response.body);
       return HistoryData.fromFullReportJson(rawData);
     } else {
@@ -218,7 +212,5 @@ class ApiService {
   Future<void> clearTokens() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('authToken');
-    // إذا كنت تستخدم Refresh Token في المستقبل، أضف السطر التالي أيضًا
-    // await prefs.remove('refreshToken');
   }
 }
