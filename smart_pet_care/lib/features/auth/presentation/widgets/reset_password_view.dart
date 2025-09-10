@@ -6,11 +6,13 @@ import '../../../../core/widgets/custom_text_field.dart';
 class ResetPasswordView extends StatelessWidget {
   final VoidCallback onResetPressed;
   final TextEditingController passwordController; // ✅  التصحيح
+  final TextEditingController confirmPasswordController; // ✅  التصحيح
 
   const ResetPasswordView({
     super.key,
     required this.onResetPressed,
     required this.passwordController,
+    required this.confirmPasswordController,
   });
 
   @override
@@ -42,7 +44,7 @@ class ResetPasswordView extends StatelessWidget {
         CustomTextField(
           labelText: 'Confirm New Password',
           isPassword: true,
-          controller: passwordController,
+          controller: confirmPasswordController,
         ), // يمكنك إضافة controller آخر هنا للتحقق
         const SizedBox(height: 40),
         CustomButton(text: 'Reset Password', onPressed: onResetPressed),

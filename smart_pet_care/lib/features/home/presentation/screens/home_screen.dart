@@ -31,7 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showAddDeviceDialog() {
-    // ✅  التصحيح: سنستخدم controller واحد فقط
+    // ✅  التصحيح: استخدام controllers للاسم والـ ID
+    final nameController = TextEditingController();
     final idController = TextEditingController();
 
     showDialog(
@@ -41,7 +42,12 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ✅  التصحيح: حذف حقل اسم الجهاز لأنه غير مستخدم في الـ Backend
+            // ✅  التصحيح: التأكد من وجود حقل لاسم الجهاز
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Device Name'),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: idController,
               decoration: const InputDecoration(labelText: 'Device ID'),
@@ -56,10 +62,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             child: const Text('Add'),
             onPressed: () async {
+              final name = nameController.text;
               final id = idController.text;
-              if (id.isNotEmpty) {
+              if (id.isNotEmpty && name.isNotEmpty) {
                 try {
-                  final response = await _apiService.addDevice(id);
+                  // ✅  التصحيح: التأكد من إرسال الاسم والـ ID
+                  final response = await _apiService.addDevice(name, id);
                   Navigator.of(ctx).pop();
 
                   if (response.statusCode == 201 && mounted) {
@@ -105,6 +113,8 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
+              // ✅  التصحيح: مسح التوكن عند تسجيل الخروج
+              _apiService.clearTokens();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => const AuthScreen()),
                 (route) => false,
@@ -122,9 +132,10 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 "How is your pet today?",
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(color: Colors.grey),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(color: Colors.grey),
               ),
               const SizedBox(height: 24),
               Expanded(
@@ -146,12 +157,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
-                    // ✅  التصحيح: التعامل مع الخطأ برسالة أوضح
+                    // ✅  التصحيح: إذا فشل المستقبل، اعرض رسالة خطأ واضحة
                     if (snapshot.hasError) {
                       return Center(
-                        child: Text(
-                          'Failed to load devices. Please try again.\nError: ${snapshot.error}',
-                          textAlign: TextAlign.center,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Failed to load devices.',
+                                style: TextStyle(color: Colors.red)),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: _refreshDevices,
+                              child: const Text('Try Again'),
+                            )
+                          ],
                         ),
                       );
                     }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/models/pet_device.dart';
 import '../../../device_control/presentation/screens/device_control_screen.dart';
 import '../../../history/presentation/screens/history_screen.dart';
+import 'status_indicator.dart'; // ✅ التأكد من استيراد هذا الويدجت
 
 class DeviceCard extends StatelessWidget {
   final PetDevice device;
@@ -20,57 +21,65 @@ class DeviceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              device.name,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            Text(device.name,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(Icons.restaurant,
+                    color: Theme.of(context).primaryColor, size: 20),
+                const SizedBox(width: 8),
+                Text('Food in Bowl:',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.bold)),
+                const Spacer(),
+                Text('${device.foodWeightGrams.toStringAsFixed(0)} g',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold)),
+              ],
             ),
             const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                // ✅  التحسين الثاني: استخدام مؤشر الحالة الملون
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Food Level: ${device.foodLevel.toStringAsFixed(1)}%',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+                    StatusIndicator(
+                        label: 'Food Stock', status: device.foodStockStatus),
                     const SizedBox(height: 8),
-                    Text(
-                      'Water Level: ${device.waterLevel.toStringAsFixed(1)}%',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+                    StatusIndicator(
+                        label: 'Water Tank', status: device.waterStockStatus),
                   ],
                 ),
+
                 Row(
                   children: [
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => HistoryScreen(
-                              deviceName: device.name,
-                              deviceId: device.id,
-                            ),
-                          ),
-                        );
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => HistoryScreen(
+                              deviceName: device.name, deviceId: device.id),
+                        ));
                       },
-                      child: const Text('History'),
+                      child: const Text('Insights'),
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => DeviceControlScreen(
-                              deviceId: device.id,
-                              deviceName: device.name,
-                            ),
-                          ),
-                        );
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => DeviceControlScreen(
+                              deviceId: device.id, deviceName: device.name),
+                        ));
                       },
                       child: const Text('Control'),
                     ),

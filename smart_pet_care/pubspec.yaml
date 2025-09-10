@@ -17,13 +17,16 @@ dependencies:
   shared_preferences: ^2.2.3
 
   # Firebase
-  firebase_core: ^2.32.0
-  firebase_messaging: ^14.9.3
+  firebase_core: ^4.0.0
+  firebase_messaging: ^16.0.0
 
   # UI & Widgets
-  pinput: ^4.0.0
-  fl_chart: ^0.68.0
+  pinput: ^5.0.1
+  fl_chart: ^1.0.0
   
+  flutter_local_notifications: ^19.4.1
+  supabase_flutter: ^2.5.8
+
   # Default Icon Pack
   cupertino_icons: ^1.0.8
 
@@ -31,7 +34,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true

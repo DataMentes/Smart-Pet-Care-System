@@ -3,11 +3,10 @@ import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
-import 'package:firebase_messaging/firebase_messaging.dart'; // ✅  التصحيح: إضافة استيراد Firebase Messaging
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../../core/api_service.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
-import '../../../home/presentation/screens/home_screen.dart';
 
 class SignupView extends StatefulWidget {
   const SignupView({super.key});
@@ -44,6 +43,14 @@ class _SignupViewState extends State<SignupView> {
     _passwordController.dispose();
     _otpController.dispose();
     super.dispose();
+  }
+
+  void _clearControllers() {
+    _firstNameController.clear();
+    _lastNameController.clear();
+    _emailController.clear();
+    _passwordController.clear();
+    _otpController.clear();
   }
 
   Future<void> _handleRequestOtp() async {
@@ -84,7 +91,6 @@ class _SignupViewState extends State<SignupView> {
   Future<void> _handleVerifyAndSignup() async {
     setState(() => _isLoading = true);
     try {
-      // ✅  التصحيح: جلب التوكن الفعلي قبل إرسال الطلب
       final fcmToken = await FirebaseMessaging.instance.getToken();
 
       final signupData = {
@@ -93,18 +99,32 @@ class _SignupViewState extends State<SignupView> {
         "first_name": _firstNameController.text,
         "last_name": _lastNameController.text,
         "otp": _otpController.text,
-        "fcm_token": fcmToken ??
-            "no_fcm_token_found", // ✅  التصحيح: استخدام التوكن الحقيقي
+        "fcm_token": fcmToken ?? "no_fcm_token_found",
       };
 
       final response = await _apiService.signupVerify(signupData);
 
       if (response.statusCode == 201 && mounted) {
-        await _apiService.saveToken(response.body);
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-          (route) => false,
+        // ✅  التصحيح: تم تغيير المنطق هنا بالكامل
+
+        // 1. عرض رسالة نجاح
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Account created successfully! Please log in.')),
         );
+
+        // 2. مسح الحقول
+        _clearControllers();
+
+        // 3. العودة إلى صفحة إدخال البيانات الأولى
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+
+        // 4. الانتقال إلى تاب تسجيل الدخول
+        DefaultTabController.of(context).animateTo(0);
       } else if (mounted) {
         final error = jsonDecode(response.body)['error'] ?? 'An error occurred';
         ScaffoldMessenger.of(context)

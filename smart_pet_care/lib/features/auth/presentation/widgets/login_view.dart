@@ -24,17 +24,15 @@ class _LoginViewState extends State<LoginView> {
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
     try {
-      // ✅  التصحيح: الحصول على الـ FCM token قبل إرسال طلب الدخول
       final fcmToken = await FirebaseMessaging.instance.getToken();
 
       final response = await _apiService.login(
         _emailController.text,
         _passwordController.text,
-        fcmToken ?? 'no_fcm_token_found', // إرسال التوكن مع الطلب
+        fcmToken ?? 'no_fcm_token_found',
       );
 
       if (response.statusCode == 200 && mounted) {
-        // ✅  التصحيح: تمرير جسم الاستجابة بالكامل لحفظ التوكن الصحيح
         await _apiService.saveToken(response.body);
 
         Navigator.of(context).pushAndRemoveUntil(

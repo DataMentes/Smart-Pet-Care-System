@@ -1,42 +1,45 @@
 // lib/features/history/domain/models/history_data.dart
 import '../../presentation/widgets/consumption_chart.dart';
 
-class FeedingLog {
-  final String time;
-  final int amountGrams;
+// موديل جديد وبسيط لتخزين بيانات الإحصائيات
+class AnalyticsData {
+  final int totalConsumedGrams;
+  final double averageDailyConsumptionGrams;
 
-  FeedingLog({required this.time, required this.amountGrams});
+  AnalyticsData({
+    required this.totalConsumedGrams,
+    required this.averageDailyConsumptionGrams,
+  });
 
-  factory FeedingLog.fromJson(Map<String, dynamic> json) {
-    return FeedingLog(
-      time: json['time'], // تأكد من أن الـ Backend يرسل هذا الحقل
-      amountGrams: (json['amountGrams'] ?? 0).toInt(),
+  factory AnalyticsData.fromJson(Map<String, dynamic> json) {
+    return AnalyticsData(
+      totalConsumedGrams: json['total_consumed_grams'] ?? 0,
+      averageDailyConsumptionGrams:
+          (json['average_daily_consumption_grams'] ?? 0.0).toDouble(),
     );
   }
 }
 
+// الموديل الرئيسي الذي يجمع بيانات الشاشة
 class HistoryData {
-  final List<ChartDataPoint> consumptionPoints;
-  final List<FeedingLog> feedingLogs;
+  final AnalyticsData analytics;
+  final List<ChartDataPoint> chartPoints;
 
-  HistoryData({required this.consumptionPoints, required this.feedingLogs});
+  HistoryData({required this.analytics, required this.chartPoints});
 
-  // ✅ التصحيح: إضافة الدالة الجديدة هنا
   factory HistoryData.fromFullReportJson(Map<String, dynamic> json) {
+    // معالجة بيانات الإحصائيات
+    final analyticsData = AnalyticsData.fromJson(json['analytics'] ?? {});
+
     // معالجة بيانات الرسم البياني
     final List<dynamic> chartDataRaw = json['chart_data'] ?? [];
     final points = chartDataRaw.asMap().entries.map((entry) {
-      int index = entry.key;
-      var item = entry.value;
       return ChartDataPoint(
-        x: index.toDouble(),
-        y: (item['food_weighted'] ?? 0.0).toDouble(),
+        x: entry.key.toDouble(),
+        y: (entry.value['grams'] ?? 0.0).toDouble(),
       );
     }).toList();
 
-    // حاليًا الـ Backend لا يرسل سجلات نصية، سنتركها قائمة فارغة
-    final logs = <FeedingLog>[];
-
-    return HistoryData(consumptionPoints: points, feedingLogs: logs);
+    return HistoryData(analytics: analyticsData, chartPoints: points);
   }
 }

@@ -2,16 +2,14 @@
 import 'package:flutter/material.dart';
 import '../../../../core/api_service.dart';
 import '../../domain/models/history_data.dart';
+import '../widgets/analytics_card.dart';
 import '../widgets/consumption_chart.dart';
 
 class HistoryScreen extends StatefulWidget {
   final String deviceName;
   final String deviceId;
-  const HistoryScreen({
-    super.key,
-    required this.deviceName,
-    required this.deviceId,
-  });
+  const HistoryScreen(
+      {super.key, required this.deviceName, required this.deviceId});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -46,12 +44,8 @@ class _HistoryScreenState extends State<HistoryScreen>
   Future<HistoryData> _fetchHistory() {
     final periods = ['daily', 'weekly', 'monthly'];
     final selectedPeriod = periods[_tabController.index];
-    // ✅  التصحيح: استخدام اسم الدالة الصحيح
     return _apiService.getHistoryFullReport(
-      widget.deviceId,
-      _selectedDateRange,
-      selectedPeriod,
-    );
+        widget.deviceId, _selectedDateRange, selectedPeriod);
   }
 
   void _refreshHistory() {
@@ -87,38 +81,29 @@ class _HistoryScreenState extends State<HistoryScreen>
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: Text('No history data found.'));
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Center(
+                child: Text(snapshot.error?.toString() ??
+                    'No data found for this period.'));
           }
 
           final historyData = snapshot.data!;
 
+          // ✅  التصحيح: تم تبسيط الواجهة هنا
           return ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
               _buildDatePicker(),
               const SizedBox(height: 20),
+              // عرض كارت الإحصائيات
+              AnalyticsCard(analytics: historyData.analytics),
+              const SizedBox(height: 20),
+              // عرض كارت الرسم البياني
               _buildChartCard(
-                title: 'Food Consumption',
-                chart: ConsumptionChart(points: historyData.consumptionPoints),
+                title: 'Consumption Chart',
+                chart: ConsumptionChart(points: historyData.chartPoints),
               ),
-              const SizedBox(height: 20),
-              _buildLogsCard(historyData.feedingLogs),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.download),
-                label: const Text('Download Report (CSV/PDF)'),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Exporting data... (Not Implemented)'),
-                    ),
-                  );
-                },
-              ),
+              // تم حذف السجلات وزر التنزيل
             ],
           );
         },
@@ -136,15 +121,14 @@ class _HistoryScreenState extends State<HistoryScreen>
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Selected Period',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text('Selected Period',
+                    style: Theme.of(context).textTheme.bodySmall),
                 Text(
                   '${_selectedDateRange.start.toLocal().toString().split(' ')[0]} - ${_selectedDateRange.end.toLocal().toString().split(' ')[0]}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -172,50 +156,11 @@ class _HistoryScreenState extends State<HistoryScreen>
               tabs: const [
                 Tab(text: 'Daily'),
                 Tab(text: 'Weekly'),
-                Tab(text: 'Monthly'),
+                Tab(text: 'Monthly')
               ],
             ),
             const SizedBox(height: 20),
             chart,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogsCard(List<FeedingLog> logs) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Feeding Times (Logs)',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 10),
-            if (logs.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text('No logs for this period.'),
-                ),
-              )
-            else
-              ...logs.map(
-                (log) => ListTile(
-                  leading: const Icon(
-                    Icons.check_circle_outline,
-                    color: Colors.green,
-                  ),
-                  title: Text(log.time),
-                  trailing: Text(
-                    '${log.amountGrams}g',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

@@ -7,11 +7,11 @@ class ChartDataPoint {
   final double y;
   ChartDataPoint({required this.x, required this.y});
 
-  // ✅  التصحيح: إضافة هذا الـ factory constructor
+  // ✅  التصحيح: التأكد من أن الـ fromJson يقرأ "grams"
   factory ChartDataPoint.fromJson(Map<String, dynamic> json) {
     return ChartDataPoint(
-      x: (json['x'] ?? 0.0).toDouble(),
-      y: (json['y'] ?? 0.0).toDouble(),
+      x: (json['x'] ?? 0.0).toDouble(), // سنفترض أننا نستخدم index للـ x
+      y: (json['grams'] ?? 0.0).toDouble(),
     );
   }
 }
@@ -34,7 +34,6 @@ class ConsumptionChart extends StatelessWidget {
         LineChartData(
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              // ✅  التصحيح: تم تغيير الخاصية من tooltipBgColor إلى getTooltipColor
               getTooltipColor: (LineBarSpot spot) =>
                   Colors.blueGrey.withOpacity(0.8),
               getTooltipItems: (touchedSpots) {

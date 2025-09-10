@@ -7,9 +7,6 @@ import '../../../../firebase_options.dart';
 import 'auth_screen.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 
-// This function can remain separate for background notifications setup in main.dart
-// For simplicity here, we can merge its logic into the splash screen's init.
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -36,23 +33,30 @@ class _SplashScreenState extends State<SplashScreen> {
     final fcmToken = await messaging.getToken();
     print('FCM Token: $fcmToken');
 
-    // 3. التحقق من وجود توكن تسجيل دخول محفوظ
+    // --- تم تعطيل منطق التحقق من تسجيل الدخول مؤقتًا ---
     final apiService = ApiService();
     final sessionToken = await apiService.getToken();
+    // ---------------------------------------------------
 
     // 4. اتخاذ قرار الانتقال بناءً على وجود التوكن
     if (mounted) {
+      // --- تم تعطيل الشرط مؤقتًا ---
       if (sessionToken != null) {
-        // إذا وجد توكن، انتقل للشاشة الرئيسية
+        // -----------------------------
+
+        // ✅  التعديل: الانتقال مباشرة إلى الشاشة الرئيسية دائمًا
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
+
+        // --- تم تعطيل الجزء الخاص بشاشة تسجيل الدخول مؤقتًا ---
       } else {
         // إذا لم يوجد توكن، انتقل لشاشة تسجيل الدخول
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const AuthScreen()),
         );
       }
+      // ---------------------------------------------------------
     }
   }
 

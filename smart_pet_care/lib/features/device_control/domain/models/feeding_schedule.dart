@@ -5,16 +5,21 @@ class FeedingSchedule {
   TimeOfDay time;
   int amountGrams;
 
-  FeedingSchedule({required this.time, required this.amountGrams});
+  // ✅  التصحيح: تم حذف متغير isActive
+  FeedingSchedule({
+    required this.time,
+    required this.amountGrams,
+  });
 
   factory FeedingSchedule.fromJson(Map<String, dynamic> json) {
-    final timeParts = json['feed_time'].split(':');
+    // ✅  التصحيح: استخدام الأسماء الصحيحة التي يرسلها الخادم
+    final timeParts = json['time'].split(':');
     return FeedingSchedule(
       time: TimeOfDay(
         hour: int.parse(timeParts[0]),
         minute: int.parse(timeParts[1]),
       ),
-      amountGrams: json['amount_grams'],
+      amountGrams: json['amount'],
     );
   }
 

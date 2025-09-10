@@ -10,11 +10,8 @@ import '../widgets/schedule_list_item.dart';
 class DeviceControlScreen extends StatefulWidget {
   final String deviceId;
   final String deviceName;
-  const DeviceControlScreen({
-    super.key,
-    required this.deviceId,
-    required this.deviceName,
-  });
+  const DeviceControlScreen(
+      {super.key, required this.deviceId, required this.deviceName});
 
   @override
   State<DeviceControlScreen> createState() => _DeviceControlScreenState();
@@ -53,9 +50,8 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load schedules: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to load schedules: $e')));
       }
     }
   }
@@ -68,16 +64,14 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Schedule saved successfully!'),
-            duration: Duration(seconds: 2),
-          ),
+              content: Text('Schedule saved successfully!'),
+              duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save schedule: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save schedule: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -95,13 +89,11 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
     showDialog(
       context: context,
       builder: (ctx) {
-        // ✅  التصحيح: استخدام StatefulBuilder لإدارة حالة مربع الحوار بشكل آمن
         return StatefulBuilder(
           builder: (builderContext, setDialogState) {
             return AlertDialog(
               title: Text(
-                existingSchedule == null ? 'Add Schedule' : 'Edit Schedule',
-              ),
+                  existingSchedule == null ? 'Add Schedule' : 'Edit Schedule'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -114,7 +106,6 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
                         initialTime: selectedTime ?? TimeOfDay.now(),
                       );
                       if (pickedTime != null) {
-                        // استخدام دالة setDialogState لتحديث واجهة مربع الحوار فقط
                         setDialogState(() {
                           selectedTime = pickedTime;
                         });
@@ -124,18 +115,16 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: amountController,
-                    decoration: const InputDecoration(
-                      labelText: 'Amount (grams)',
-                    ),
+                    decoration:
+                        const InputDecoration(labelText: 'Amount (grams)'),
                     keyboardType: TextInputType.number,
                   ),
                 ],
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Cancel'),
-                ),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Cancel')),
                 ElevatedButton(
                   onPressed: () {
                     if (selectedTime != null &&
@@ -145,9 +134,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
                         if (existingSchedule == null) {
                           _schedules?.add(
                             FeedingSchedule(
-                              time: selectedTime!,
-                              amountGrams: amount,
-                            ),
+                                time: selectedTime!, amountGrams: amount),
                           );
                         } else {
                           existingSchedule.time = selectedTime!;
@@ -179,22 +166,18 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
               children: [
                 _buildFeedNowCard(),
                 Padding(
-                  padding: const EdgeInsets.all(
-                    16.0,
-                  ).copyWith(bottom: 0, top: 8),
+                  padding:
+                      const EdgeInsets.all(16.0).copyWith(bottom: 0, top: 8),
                   child: Row(
                     children: [
-                      Text(
-                        'Feeding Schedules',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
+                      Text('Feeding Schedules',
+                          style: Theme.of(context).textTheme.titleLarge),
                       const Spacer(),
                       if (_isSaving)
                         const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(),
-                        ),
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator()),
                     ],
                   ),
                 ),
@@ -202,20 +185,15 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
                   child: RefreshIndicator(
                     onRefresh: _fetchSchedulesFromServer,
                     child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                        16,
-                        16,
-                        16,
-                        80,
-                      ), // مساحة للـ FAB
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                       itemCount: _schedules?.length ?? 0,
                       itemBuilder: (ctx, index) {
                         final schedule = _schedules![index];
                         return ScheduleListItem(
                           schedule: schedule,
+                          // ✅  التصحيح: تم حذف onToggle لأنها لم تعد موجودة
                           onEdit: () => _showAddEditScheduleDialog(
-                            existingSchedule: schedule,
-                          ),
+                              existingSchedule: schedule),
                           onDelete: () {
                             setState(() {
                               _schedules!.removeAt(index);

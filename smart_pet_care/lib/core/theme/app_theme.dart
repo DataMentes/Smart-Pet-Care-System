@@ -1,5 +1,6 @@
 // lib/core/theme/app_theme.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ✅  التصحيح: إضافة هذا السطر
 
 class AppTheme {
   static const Color _primaryColor = Color(0xFF25C1A9);
@@ -14,9 +15,19 @@ class AppTheme {
         primary: _primaryColor,
         secondary: _primaryColor,
       ),
+      // ✅  التصحيح: إضافة هذا الجزء للمظهر الفاتح
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          // اجعل أيقونات شريط الحالة داكنة
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light, // For iOS
+        ),
+      ),
       elevatedButtonTheme: _elevatedButtonTheme,
       inputDecorationTheme: _inputDecorationTheme(isDark: false),
-      tabBarTheme: _tabBarTheme, // لا تغيير هنا
+      tabBarTheme: _tabBarTheme,
       cardColor: Colors.white,
       shadowColor: Colors.black.withOpacity(0.05),
     );
@@ -33,9 +44,19 @@ class AppTheme {
         secondary: _primaryColor,
         surface: Color(0xFF1E1E1E),
       ),
+      // ✅  التصحيح: إضافة هذا الجزء للمظهر الداكن
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          // اجعل أيقونات شريط الحالة فاتحة
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark, // For iOS
+        ),
+      ),
       elevatedButtonTheme: _elevatedButtonTheme,
       inputDecorationTheme: _inputDecorationTheme(isDark: true),
-      tabBarTheme: _tabBarTheme, // لا تغيير هنا
+      tabBarTheme: _tabBarTheme,
       cardColor: const Color(0xFF1E1E1E),
       shadowColor: Colors.black.withOpacity(0.2),
     );
@@ -43,16 +64,16 @@ class AppTheme {
 
   static final ElevatedButtonThemeData _elevatedButtonTheme =
       ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-      );
+    style: ElevatedButton.styleFrom(
+      backgroundColor: _primaryColor,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+    ),
+  );
 
   static InputDecorationTheme _inputDecorationTheme({required bool isDark}) {
     return InputDecorationTheme(
@@ -66,7 +87,6 @@ class AppTheme {
     );
   }
 
-  // ✅  التصحيح: تم تغيير النوع من TabBarTheme إلى TabBarThemeData
   static const TabBarThemeData _tabBarTheme = TabBarThemeData(
     labelColor: _primaryColor,
     unselectedLabelColor: Colors.grey,

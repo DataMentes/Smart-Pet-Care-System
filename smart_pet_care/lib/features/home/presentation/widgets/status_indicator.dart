@@ -1,17 +1,38 @@
 // lib/features/home/presentation/widgets/status_indicator.dart
-// ✅  التصحيح: تم إصلاح الخطأ المطبعي هنا
 import 'package:flutter/material.dart';
 
 class StatusIndicator extends StatelessWidget {
   final String label;
-  final bool isFull;
+  final String status;
 
-  const StatusIndicator({super.key, required this.label, required this.isFull});
+  const StatusIndicator({
+    super.key,
+    required this.label,
+    required this.status,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final Color color = isFull ? Colors.green : Colors.orange;
-    final String text = isFull ? 'Full' : 'Low';
+    // ✅  التصحيح: تمت إضافة منطق لمعالجة الحالات الثلاث
+
+    // تحديد اللون والنص بناءً على الحالة
+    Color color;
+    String text;
+
+    switch (status.toLowerCase()) {
+      case 'high':
+        color = Colors.green;
+        text = 'High';
+        break;
+      case 'low':
+        color = Colors.orange;
+        text = 'Low';
+        break;
+      default: // الحالة الافتراضية لأي نص آخر مثل "Unknown"
+        color = Colors.grey;
+        text = 'Unknown';
+        break;
+    }
 
     return Row(
       children: [

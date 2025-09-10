@@ -3,18 +3,20 @@ import 'package:flutter/material.dart';
 
 class StatusIndicator extends StatelessWidget {
   final String label;
-  final bool isFull;
+  final String status; // ✅  التصحيح: تم تغيير النوع إلى String
 
   const StatusIndicator({
     super.key,
     required this.label,
-    required this.isFull,
+    required this.status,
   });
 
   @override
   Widget build(BuildContext context) {
-    final Color color = isFull ? Colors.green : Colors.orange;
-    final String text = isFull ? 'Full' : 'Low';
+    final bool isHigh = status.toLowerCase() == 'high';
+
+    final Color color = isHigh ? Colors.green : Colors.orange;
+    final String text = isHigh ? 'High' : 'Low';
 
     return Row(
       children: [
@@ -27,7 +29,8 @@ class StatusIndicator extends StatelessWidget {
           ),
           child: Text(
             text,
-            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(
+                color: color, fontWeight: FontWeight.bold, fontSize: 12),
           ),
         ),
       ],

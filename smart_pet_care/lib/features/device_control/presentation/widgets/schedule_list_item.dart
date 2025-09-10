@@ -18,6 +18,7 @@ class ScheduleListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formattedTime = schedule.time.format(context);
+    // ✅  التصحيح: استخدام تنسيق نص ثابت لأنه لم يعد هناك حالة "معطل"
     final textStyle = Theme.of(context).textTheme.bodyLarge;
 
     return Card(
@@ -35,7 +36,7 @@ class ScheduleListItem extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ✅  التصحيح: تم حذف الويدجت Switch من هنا
+            // ✅  التصحيح: تم حذف الويدجت Switch
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               onPressed: onEdit,
