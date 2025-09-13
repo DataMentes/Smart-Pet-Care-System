@@ -1,4 +1,4 @@
-name: smart_pet_care
+name: pit_care
 description: "A new Flutter project."
 publish_to: 'none' 
 
@@ -31,7 +31,6 @@ dependencies:
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
-  names_launcher: ^0.0.1
   flutter_launcher_icons: "^0.11.0"
 
   flutter_test:
@@ -39,11 +38,6 @@ dev_dependencies:
   
   flutter_lints: ^6.0.0
 
-names_launcher:
-  name: "Pit Care"
-  platforms:
-    android:
-      enabled: true
 
 flutter_icons:
   android: true
