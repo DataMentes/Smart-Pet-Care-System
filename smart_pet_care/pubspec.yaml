@@ -41,11 +41,12 @@ dev_dependencies:
 
 names_launcher:
   name: "Pit Care"
-
+  platforms:
+    android:
+      enabled: true
 
 flutter_icons:
   android: true
-  ios: true
   image_path: "assets/icon/app_icon.png"
 
 flutter:
