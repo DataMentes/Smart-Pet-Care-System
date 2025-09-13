@@ -8,7 +8,8 @@ import '../features/device_control/domain/models/feeding_schedule.dart';
 import '../features/history/domain/models/history_data.dart';
 
 class ApiService {
-  final String _baseUrl = 'http://10.190.227.248:5000';
+  final String _baseUrl =
+      'http://192.168.1.8:5000'; // replace with your backend URL
 
   Future<void> saveToken(String rawSessionData) async {
     final prefs = await SharedPreferences.getInstance();
